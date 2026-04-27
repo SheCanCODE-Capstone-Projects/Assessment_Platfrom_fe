@@ -3,7 +3,6 @@
 This is a frontend project built with Next.js App Router and Tailwind CSS for an online technical assessment platform.
 
 It supports two main user flows:
-
 - Admin: manages questions, exams, candidates, and code reviews
 - Candidate: receives an assessment link, reads instructions, takes the assessment, and submits solutions
 
