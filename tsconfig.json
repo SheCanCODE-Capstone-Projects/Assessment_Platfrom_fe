@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/components/cards/StatCard.jsx", "src/components/common/SectionTitle.jsx", "src/components/feedback/Alert.jsx"  ],
   "exclude": ["node_modules"]
 }
