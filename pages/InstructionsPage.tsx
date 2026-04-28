@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
 import Navbar from "@/src/components/layout/Navbar";
 import Button from "@/src/components/ui/Button";
+
+type ReadinessStatus = "idle" | "checking" | "granted" | "denied";
+
+type ReadinessState = {
+  camera: ReadinessStatus;
+  internet: "online" | "offline";
+};
 
 type CandidateSession = {
   fullName: string;
@@ -55,6 +62,49 @@ function IconCircle({
 
 export default function InstructionsPage() {
   const router = useRouter();
+  const [readiness, setReadiness] = useState<ReadinessState>({
+    camera: "idle",
+    internet: typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline",
+  });
+  const [showReadinessModal, setShowReadinessModal] = useState(false);
+
+  useEffect(() => {
+    function handleOnline() {
+      setReadiness((r) => ({ ...r, internet: "online" }));
+    }
+    function handleOffline() {
+      setReadiness((r) => ({ ...r, internet: "offline" }));
+    }
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  async function checkCamera() {
+    setReadiness((r) => ({ ...r, camera: "checking" }));
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setReadiness((r) => ({ ...r, camera: "granted" }));
+    } catch {
+      setReadiness((r) => ({ ...r, camera: "denied" }));
+    }
+  }
+
+  function handleStartClick() {
+    if (readiness.camera === "idle" || readiness.camera === "denied" || readiness.internet === "offline") {
+      setShowReadinessModal(true);
+      return;
+    }
+    void router.push("/");
+  }
+
+  const allReady =
+    readiness.camera === "granted" && readiness.internet === "online";
+
   const [candidateSession] = useState<CandidateSession>(() => {
     if (typeof window === "undefined") {
       return INITIAL_SESSION;
@@ -190,6 +240,88 @@ export default function InstructionsPage() {
             </ul>
           </section>
 
+          {/* Pre-Assessment Readiness */}
+          <section className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50/60 p-4 sm:p-5">
+            <h3 className="text-[16px] font-semibold text-[#0f172a]">
+              Pre-Assessment Checks
+            </h3>
+            <p className="mt-1 text-[13px] text-slate-500">
+              Both checks must pass before you can start.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {/* Internet */}
+              <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3">
+                <div className="flex items-center gap-2 text-[14px] font-medium text-slate-800">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  Internet Connection
+                </div>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    readiness.internet === "online"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {readiness.internet === "online" ? "Connected" : "No Connection"}
+                </span>
+              </div>
+
+              {/* Camera */}
+              <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3">
+                <div className="flex items-center gap-2 text-[14px] font-medium text-slate-800">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="m23 7-7 5 7 5V7z" />
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                  </svg>
+                  Camera Access
+                </div>
+                {readiness.camera === "idle" && (
+                  <button
+                    type="button"
+                    onClick={() => void checkCamera()}
+                    className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+                  >
+                    Verify Camera
+                  </button>
+                )}
+                {readiness.camera === "checking" && (
+                  <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600">
+                    Checking…
+                  </span>
+                )}
+                {readiness.camera === "granted" && (
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                    Granted
+                  </span>
+                )}
+                {readiness.camera === "denied" && (
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                      Denied
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void checkCamera()}
+                      className="text-xs text-emerald-600 underline hover:text-emerald-800"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {readiness.camera === "denied" && (
+              <p className="mt-3 text-[13px] text-red-600">
+                Camera access was denied. Please enable it in your browser settings and retry.
+              </p>
+            )}
+          </section>
+
           <div className="mt-8 border-t border-zinc-200 pt-8">
             <p className="text-[15px] leading-7 text-slate-700">
               Once you start, the timer will begin counting down. Make sure
@@ -200,14 +332,56 @@ export default function InstructionsPage() {
               type="button"
               tone="green"
               size="lg"
-              onClick={() => void router.push("/")}
-              className="mt-7 h-12 w-full rounded-lg bg-[#1ec28b] text-base font-semibold hover:bg-[#18af7d]"
+              onClick={handleStartClick}
+              className={`mt-7 h-12 w-full rounded-lg text-base font-semibold transition ${
+                allReady
+                  ? "bg-[#1ec28b] hover:bg-[#18af7d]"
+                  : "bg-zinc-300 text-zinc-500 cursor-not-allowed"
+              }`}
             >
-              Start Assessment
+              {allReady ? "Start Assessment" : "Complete Checks to Start"}
             </Button>
           </div>
         </section>
       </main>
+
+      {/* Readiness warning modal */}
+      {showReadinessModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 shadow-xl">
+            <h2 className="text-[17px] font-semibold text-[#0f172a]">
+              Readiness Check Failed
+            </h2>
+            <ul className="mt-4 space-y-2 text-[14px] text-slate-700">
+              {readiness.internet === "offline" && (
+                <li className="flex items-center gap-2 text-red-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+                  No internet connection detected.
+                </li>
+              )}
+              {(readiness.camera === "idle" || readiness.camera === "denied") && (
+                <li className="flex items-center gap-2 text-red-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+                  Camera access is required. Please grant permission.
+                </li>
+              )}
+            </ul>
+            <Button
+              type="button"
+              tone="zinc"
+              size="md"
+              onClick={() => setShowReadinessModal(false)}
+              className="mt-6 w-full"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

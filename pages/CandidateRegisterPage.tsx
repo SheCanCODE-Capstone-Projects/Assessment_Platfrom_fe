@@ -1,4 +1,12 @@
-import { useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import {
+  useState,
+  useRef,
+  useCallback,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+  type DragEvent,
+} from "react";
 import { useRouter } from "next/router";
 
 import Navbar from "@/src/components/layout/Navbar";
@@ -21,7 +29,18 @@ type FormValues = {
   preferredLanguage: string;
 };
 
-type FormErrors = FormValues;
+type FormErrors = FormValues & { profilePhoto: string };
+
+const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
+
+function validatePhoto(file: File | null): string {
+  if (!file) return "Profile photo is required.";
+  if (!ACCEPTED_TYPES.includes(file.type))
+    return "Only JPG, JPEG, or PNG files are accepted.";
+  if (file.size > MAX_SIZE_BYTES) return "File size must not exceed 2 MB.";
+  return "";
+}
 
 type FormFieldProps = {
   id: string;
@@ -42,6 +61,7 @@ const INITIAL_ERRORS: FormErrors = {
   email: "",
   phoneNumber: "",
   preferredLanguage: "",
+  profilePhoto: "",
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -75,6 +95,50 @@ export default function CandidateRegisterPage() {
   const router = useRouter();
   const [formValues, setFormValues] = useState<FormValues>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>(INITIAL_ERRORS);
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const applyPhoto = useCallback((file: File) => {
+    const error = validatePhoto(file);
+    if (error) {
+      setErrors((c) => ({ ...c, profilePhoto: error }));
+      return;
+    }
+    setProfilePhoto(file);
+    setErrors((c) => ({ ...c, profilePhoto: "" }));
+    const reader = new FileReader();
+    reader.onload = (e) => setPhotoPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
+
+  function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    if (file) applyPhoto(file);
+  }
+
+  function handleDragOver(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave() {
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0] ?? null;
+    if (file) applyPhoto(file);
+  }
+
+  function removePhoto() {
+    setProfilePhoto(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   function validateField(name: keyof FormValues, value: string) {
     const trimmedValue = value.trim();
@@ -118,6 +182,7 @@ export default function CandidateRegisterPage() {
         "preferredLanguage",
         formValues.preferredLanguage
       ),
+      profilePhoto: validatePhoto(profilePhoto),
     };
 
     setErrors(nextErrors);
@@ -132,6 +197,7 @@ export default function CandidateRegisterPage() {
         JSON.stringify({
           fullName: formValues.fullName.trim(),
           preferredLanguage: formValues.preferredLanguage.trim(),
+          profilePhoto: photoPreview,
         })
       );
     }
@@ -172,6 +238,86 @@ export default function CandidateRegisterPage() {
             </h2>
 
             <div className="mt-7 space-y-6">
+              {/* Profile Photo Upload */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#0f172a]">
+                  Upload Profile Photo *
+                </label>
+
+                {photoPreview ? (
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={photoPreview}
+                      alt="Profile preview"
+                      className="h-20 w-20 rounded-full object-cover border-2 border-emerald-400 shadow-sm"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-medium text-slate-800 truncate max-w-[200px]">
+                        {profilePhoto?.name}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {profilePhoto ? (profilePhoto.size / 1024).toFixed(1) : 0} KB
+                      </p>
+                      <button
+                        type="button"
+                        onClick={removePhoto}
+                        className="mt-1 text-xs font-medium text-red-500 hover:text-red-700 text-left"
+                      >
+                        Remove photo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={[
+                      "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 cursor-pointer transition",
+                      isDragging
+                        ? "border-emerald-500 bg-emerald-50"
+                        : errors.profilePhoto
+                        ? "border-red-300 bg-red-50/30"
+                        : "border-zinc-300 bg-zinc-50 hover:border-emerald-400 hover:bg-emerald-50/30",
+                    ].join(" ")}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-9 w-9 text-slate-400"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 16V8m0 0-3 3m3-3 3 3" />
+                      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                    </svg>
+                    <p className="text-sm font-medium text-slate-700">
+                      Drag &amp; drop or{" "}
+                      <span className="text-emerald-600 underline">click to upload</span>
+                    </p>
+                    <p className="text-xs text-slate-400">JPG, JPEG, PNG &bull; Max 2 MB</p>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={handlePhotoChange}
+                  className="sr-only"
+                  aria-label="Upload profile photo"
+                />
+
+                {errors.profilePhoto ? (
+                  <p className="mt-2 text-sm text-red-600">{errors.profilePhoto}</p>
+                ) : null}
+              </div>
+
               <FormField
                 id="fullName"
                 label="Full Name *"
