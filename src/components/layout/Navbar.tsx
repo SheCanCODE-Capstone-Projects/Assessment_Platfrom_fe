@@ -29,7 +29,7 @@ export default function Navbar({
 
         <div className="flex items-center gap-3">
           {right ?? (
-            <Button href="/admin" tone="orange" size="sm">
+            <Button href="/admin/login" tone="orange" size="sm">
               Admin Login
             </Button>
           )}
