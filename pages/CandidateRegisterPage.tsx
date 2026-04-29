@@ -29,13 +29,13 @@ type FormValues = {
   preferredLanguage: string;
 };
 
-type FormErrors = FormValues & { profilePhoto: string };
+type FormErrors = FormValues & { idPhoto: string };
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
-const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
+const MAX_SIZE_BYTES = 2 * 1024 * 1024;
 
 function validatePhoto(file: File | null): string {
-  if (!file) return "Profile photo is required.";
+  if (!file) return "National ID or Passport photo is required.";
   if (!ACCEPTED_TYPES.includes(file.type))
     return "Only JPG, JPEG, or PNG files are accepted.";
   if (file.size > MAX_SIZE_BYTES) return "File size must not exceed 2 MB.";
@@ -61,7 +61,7 @@ const INITIAL_ERRORS: FormErrors = {
   email: "",
   phoneNumber: "",
   preferredLanguage: "",
-  profilePhoto: "",
+  idPhoto: "",
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -91,11 +91,66 @@ function inputClasses(hasError: boolean) {
   ].join(" ");
 }
 
+const STEPS = ["Assessment Details", "Personal Information"] as const;
+
+function StepIndicator({ current }: { current: number }) {
+  return (
+    <div className="flex items-center gap-0 mb-8">
+      {STEPS.map((label, i) => {
+        const stepNum = i + 1;
+        const isCompleted = stepNum < current;
+        const isActive = stepNum === current;
+        return (
+          <div key={label} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={[
+                  "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition",
+                  isCompleted
+                    ? "bg-emerald-600 text-white"
+                    : isActive
+                    ? "bg-[#0f172a] text-white"
+                    : "bg-zinc-200 text-zinc-500",
+                ].join(" ")}
+              >
+                {isCompleted ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                    <path d="m5 12 5 5L20 7" />
+                  </svg>
+                ) : (
+                  stepNum
+                )}
+              </div>
+              <span
+                className={[
+                  "text-[11px] font-medium whitespace-nowrap",
+                  isActive ? "text-[#0f172a]" : "text-slate-400",
+                ].join(" ")}
+              >
+                {label}
+              </span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div
+                className={[
+                  "h-px flex-1 mx-2 mb-4 transition",
+                  isCompleted ? "bg-emerald-500" : "bg-zinc-200",
+                ].join(" ")}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function CandidateRegisterPage() {
   const router = useRouter();
+  const [step, setStep] = useState(1);
   const [formValues, setFormValues] = useState<FormValues>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>(INITIAL_ERRORS);
-  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [idPhoto, setIdPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -103,11 +158,11 @@ export default function CandidateRegisterPage() {
   const applyPhoto = useCallback((file: File) => {
     const error = validatePhoto(file);
     if (error) {
-      setErrors((c) => ({ ...c, profilePhoto: error }));
+      setErrors((c) => ({ ...c, idPhoto: error }));
       return;
     }
-    setProfilePhoto(file);
-    setErrors((c) => ({ ...c, profilePhoto: "" }));
+    setIdPhoto(file);
+    setErrors((c) => ({ ...c, idPhoto: "" }));
     const reader = new FileReader();
     reader.onload = (e) => setPhotoPreview(e.target?.result as string);
     reader.readAsDataURL(file);
@@ -135,40 +190,31 @@ export default function CandidateRegisterPage() {
   }
 
   function removePhoto() {
-    setProfilePhoto(null);
+    setIdPhoto(null);
     setPhotoPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function validateField(name: keyof FormValues, value: string) {
-    const trimmedValue = value.trim();
-
-    if (!trimmedValue) {
-      return "This field is required.";
-    }
-
-    if (name === "email" && !emailPattern.test(trimmedValue)) {
+    const trimmed = value.trim();
+    if (!trimmed) return "This field is required.";
+    if (name === "email" && !emailPattern.test(trimmed))
       return "Please enter a valid email address.";
-    }
-
     return "";
   }
 
-  function handleChange(
-    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) {
+  function handleChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = event.target;
     const fieldName = name as keyof FormValues;
+    setFormValues((c) => ({ ...c, [fieldName]: value }));
+    setErrors((c) => ({ ...c, [fieldName]: validateField(fieldName, value) }));
+  }
 
-    setFormValues((current) => ({
-      ...current,
-      [fieldName]: value,
-    }));
-
-    setErrors((current) => ({
-      ...current,
-      [fieldName]: validateField(fieldName, value),
-    }));
+  function handleNextStep() {
+    const photoError = validatePhoto(idPhoto);
+    setErrors((c) => ({ ...c, idPhoto: photoError }));
+    if (photoError) return;
+    setStep(2);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -178,18 +224,12 @@ export default function CandidateRegisterPage() {
       fullName: validateField("fullName", formValues.fullName),
       email: validateField("email", formValues.email),
       phoneNumber: validateField("phoneNumber", formValues.phoneNumber),
-      preferredLanguage: validateField(
-        "preferredLanguage",
-        formValues.preferredLanguage
-      ),
-      profilePhoto: validatePhoto(profilePhoto),
+      preferredLanguage: validateField("preferredLanguage", formValues.preferredLanguage),
+      idPhoto: validatePhoto(idPhoto),
     };
 
     setErrors(nextErrors);
-
-    if (Object.values(nextErrors).some(Boolean)) {
-      return;
-    }
+    if (Object.values(nextErrors).some(Boolean)) return;
 
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(
@@ -197,7 +237,7 @@ export default function CandidateRegisterPage() {
         JSON.stringify({
           fullName: formValues.fullName.trim(),
           preferredLanguage: formValues.preferredLanguage.trim(),
-          profilePhoto: photoPreview,
+          idPhoto: photoPreview,
         })
       );
     }
@@ -209,61 +249,65 @@ export default function CandidateRegisterPage() {
     <div className="min-h-screen bg-zinc-50">
       <Navbar right={<span aria-hidden="true" />} />
 
-      <main className="px-4 py-12 sm:px-6 sm:py-14">
+      <main className="px-4 py-10 sm:px-6 sm:py-14">
         <section className="mx-auto w-full max-w-[610px] rounded-xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10">
-          <header>
-            <h1 className="text-[30px] font-bold tracking-tight text-[#0f172a] sm:text-[32px]">
-              JavaScript Developer Assessment
-            </h1>
-            <p className="mt-3 text-[15px] leading-7 text-slate-600">
-              This assessment tests your fundamental JavaScript programming
-              skills.
-            </p>
-          </header>
 
-          <section className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5">
-            <h2 className="text-[16px] font-semibold text-[#0f172a]">
-              Assessment Details:
-            </h2>
-            <ul className="mt-4 space-y-2 text-[15px] leading-7 text-slate-800">
-              <li>&bull; Duration: 60 minutes</li>
-              <li>&bull; Number of Questions: 3</li>
-              <li>&bull; Pass Mark: 70%</li>
-            </ul>
-          </section>
+          <StepIndicator current={step} />
 
-          <form onSubmit={handleSubmit} className="mt-9">
-            <h2 className="text-[17px] font-semibold text-[#0f172a]">
-              Personal Information
-            </h2>
+          {/* ── STEP 1 ── */}
+          {step === 1 && (
+            <>
+              <header>
+                <h1 className="text-[28px] font-bold tracking-tight text-[#0f172a] sm:text-[30px]">
+                  JavaScript Developer Assessment
+                </h1>
+                <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                  This assessment tests your fundamental JavaScript programming skills.
+                </p>
+              </header>
 
-            <div className="mt-7 space-y-6">
-              {/* Profile Photo Upload */}
-              <div>
+              <section className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5">
+                <h2 className="text-[15px] font-semibold text-[#0f172a]">
+                  Assessment Details
+                </h2>
+                <ul className="mt-3 space-y-2 text-[14px] leading-7 text-slate-800">
+                  <li>&bull; Duration: 60 minutes</li>
+                  <li>&bull; Number of Questions: 3</li>
+                  <li>&bull; Pass Mark: 70%</li>
+                </ul>
+              </section>
+
+              <div className="mt-8">
                 <label className="mb-2 block text-sm font-medium text-[#0f172a]">
-                  Upload Profile Photo *
+                  Upload National ID / Passport Photo *
                 </label>
+                <p className="mb-3 text-[13px] text-slate-500">
+                  Upload a clear photo of your National ID or Passport for identity verification.
+                </p>
 
                 {photoPreview ? (
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-start gap-4 rounded-lg border border-emerald-200 bg-emerald-50/40 p-4">
                     <img
                       src={photoPreview}
-                      alt="Profile preview"
-                      className="h-20 w-20 rounded-full object-cover border-2 border-emerald-400 shadow-sm"
+                      alt="ID preview"
+                      className="h-24 w-36 rounded-md object-cover border border-zinc-200 shadow-sm shrink-0"
                     />
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium text-slate-800 truncate max-w-[200px]">
-                        {profilePhoto?.name}
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">
+                        Document uploaded
                       </p>
-                      <p className="text-xs text-slate-500">
-                        {profilePhoto ? (profilePhoto.size / 1024).toFixed(1) : 0} KB
+                      <p className="text-[13px] text-slate-500 truncate">
+                        {idPhoto?.name}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {idPhoto ? (idPhoto.size / 1024).toFixed(1) : 0} KB
                       </p>
                       <button
                         type="button"
                         onClick={removePhoto}
                         className="mt-1 text-xs font-medium text-red-500 hover:text-red-700 text-left"
                       >
-                        Remove photo
+                        Remove &amp; re-upload
                       </button>
                     </div>
                   </div>
@@ -277,30 +321,34 @@ export default function CandidateRegisterPage() {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     className={[
-                      "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 cursor-pointer transition",
+                      "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-10 cursor-pointer transition",
                       isDragging
                         ? "border-emerald-500 bg-emerald-50"
-                        : errors.profilePhoto
+                        : errors.idPhoto
                         ? "border-red-300 bg-red-50/30"
                         : "border-zinc-300 bg-zinc-50 hover:border-emerald-400 hover:bg-emerald-50/30",
                     ].join(" ")}
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      className="h-9 w-9 text-slate-400"
+                      className="h-10 w-10 text-slate-400"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.5"
                       aria-hidden="true"
                     >
-                      <path d="M12 16V8m0 0-3 3m3-3 3 3" />
-                      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <path d="M3 9h18" />
+                      <path d="M8 4v5" />
+                      <path d="M16 4v5" />
                     </svg>
                     <p className="text-sm font-medium text-slate-700">
                       Drag &amp; drop or{" "}
                       <span className="text-emerald-600 underline">click to upload</span>
                     </p>
-                    <p className="text-xs text-slate-400">JPG, JPEG, PNG &bull; Max 2 MB</p>
+                    <p className="text-xs text-slate-400">
+                      National ID or Passport &bull; JPG, JPEG, PNG &bull; Max 2 MB
+                    </p>
                   </div>
                 )}
 
@@ -310,114 +358,130 @@ export default function CandidateRegisterPage() {
                   accept="image/jpeg,image/jpg,image/png"
                   onChange={handlePhotoChange}
                   className="sr-only"
-                  aria-label="Upload profile photo"
+                  aria-label="Upload National ID or Passport photo"
                 />
 
-                {errors.profilePhoto ? (
-                  <p className="mt-2 text-sm text-red-600">{errors.profilePhoto}</p>
+                {errors.idPhoto ? (
+                  <p className="mt-2 text-sm text-red-600">{errors.idPhoto}</p>
                 ) : null}
               </div>
 
-              <FormField
-                id="fullName"
-                label="Full Name *"
-                error={errors.fullName}
+              <Button
+                type="button"
+                tone="green"
+                size="lg"
+                onClick={handleNextStep}
+                className="mt-8 h-12 w-full rounded-lg bg-[#1ec28b] text-base font-semibold hover:bg-[#18af7d]"
               >
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  value={formValues.fullName}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  autoComplete="name"
-                  className={inputClasses(Boolean(errors.fullName))}
-                />
-              </FormField>
+                Next: Personal Information →
+              </Button>
+            </>
+          )}
 
-              <FormField
-                id="email"
-                label="Email Address *"
-                error={errors.email}
-              >
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formValues.email}
-                  onChange={handleChange}
-                  placeholder="your.email@example.com"
-                  autoComplete="email"
-                  className={inputClasses(Boolean(errors.email))}
-                />
-              </FormField>
+          {/* ── STEP 2 ── */}
+          {step === 2 && (
+            <form onSubmit={handleSubmit}>
+              <header className="mb-7">
+                <h2 className="text-[22px] font-bold tracking-tight text-[#0f172a]">
+                  Personal Information
+                </h2>
+                <p className="mt-1 text-[14px] text-slate-500">
+                  Fill in your details to complete registration.
+                </p>
+              </header>
 
-              <FormField
-                id="phoneNumber"
-                label="Phone Number *"
-                error={errors.phoneNumber}
-              >
-                <input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  type="tel"
-                  value={formValues.phoneNumber}
-                  onChange={handleChange}
-                  placeholder="+(250) 7XX XXX XXX"
-                  autoComplete="tel"
-                  className={inputClasses(Boolean(errors.phoneNumber))}
-                />
-              </FormField>
-
-              <FormField
-                id="preferredLanguage"
-                label="Preferred Programming Language *"
-                error={errors.preferredLanguage}
-              >
-                <div className="relative">
-                  <select
-                    id="preferredLanguage"
-                    name="preferredLanguage"
-                    value={formValues.preferredLanguage}
+              <div className="space-y-6">
+                <FormField id="fullName" label="Full Name *" error={errors.fullName}>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    value={formValues.fullName}
                     onChange={handleChange}
-                    className={[
-                      inputClasses(Boolean(errors.preferredLanguage)),
-                      "appearance-none pr-10",
-                    ].join(" ")}
-                  >
-                    <option value="">Select a programming language</option>
-                    {LANGUAGE_OPTIONS.map((language) => (
-                      <option key={language} value={language}>
-                        {language}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Enter your full name"
+                    autoComplete="name"
+                    className={inputClasses(Boolean(errors.fullName))}
+                  />
+                </FormField>
 
-                  <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
-                    <svg
-                      viewBox="0 0 20 20"
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      aria-hidden="true"
+                <FormField id="email" label="Email Address *" error={errors.email}>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formValues.email}
+                    onChange={handleChange}
+                    placeholder="your.email@example.com"
+                    autoComplete="email"
+                    className={inputClasses(Boolean(errors.email))}
+                  />
+                </FormField>
+
+                <FormField id="phoneNumber" label="Phone Number *" error={errors.phoneNumber}>
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    value={formValues.phoneNumber}
+                    onChange={handleChange}
+                    placeholder="+(250) 7XX XXX XXX"
+                    autoComplete="tel"
+                    className={inputClasses(Boolean(errors.phoneNumber))}
+                  />
+                </FormField>
+
+                <FormField
+                  id="preferredLanguage"
+                  label="Preferred Programming Language *"
+                  error={errors.preferredLanguage}
+                >
+                  <div className="relative">
+                    <select
+                      id="preferredLanguage"
+                      name="preferredLanguage"
+                      value={formValues.preferredLanguage}
+                      onChange={handleChange}
+                      className={[inputClasses(Boolean(errors.preferredLanguage)), "appearance-none pr-10"].join(" ")}
                     >
-                      <path d="m5 7.5 5 5 5-5" />
-                    </svg>
-                  </span>
-                </div>
-              </FormField>
-            </div>
+                      <option value="">Select a programming language</option>
+                      {LANGUAGE_OPTIONS.map((language) => (
+                        <option key={language} value={language}>
+                          {language}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                      <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+                        <path d="m5 7.5 5 5 5-5" />
+                      </svg>
+                    </span>
+                  </div>
+                </FormField>
+              </div>
 
-            <Button
-              type="submit"
-              tone="green"
-              size="lg"
-              className="mt-6 h-12 w-full rounded-lg bg-[#1ec28b] text-base font-semibold hover:bg-[#18af7d]"
-            >
-              Continue to Instructions
-            </Button>
-          </form>
+              <div className="mt-8 flex gap-3">
+                <Button
+                  type="button"
+                  tone="zinc"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setStep(1)}
+                  className="h-12 w-full rounded-lg text-base font-semibold"
+                >
+                  ← Back
+                </Button>
+                <Button
+                  type="submit"
+                  tone="green"
+                  size="lg"
+                  className="h-12 w-full rounded-lg bg-[#1ec28b] text-base font-semibold hover:bg-[#18af7d]"
+                >
+                  Continue to Instructions
+                </Button>
+              </div>
+            </form>
+          )}
+
         </section>
       </main>
     </div>

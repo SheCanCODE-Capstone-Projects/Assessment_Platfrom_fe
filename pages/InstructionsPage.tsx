@@ -66,6 +66,7 @@ export default function InstructionsPage() {
     camera: "idle",
     internet: typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline",
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showReadinessModal, setShowReadinessModal] = useState(false);
 
   useEffect(() => {
@@ -95,7 +96,12 @@ export default function InstructionsPage() {
   }
 
   function handleStartClick() {
-    if (readiness.camera === "idle" || readiness.camera === "denied" || readiness.internet === "offline") {
+    if (
+      readiness.camera === "idle" ||
+      readiness.camera === "denied" ||
+      readiness.internet === "offline" ||
+      !termsAccepted
+    ) {
       setShowReadinessModal(true);
       return;
     }
@@ -103,7 +109,9 @@ export default function InstructionsPage() {
   }
 
   const allReady =
-    readiness.camera === "granted" && readiness.internet === "online";
+    readiness.camera === "granted" &&
+    readiness.internet === "online" &&
+    termsAccepted;
 
   const [candidateSession] = useState<CandidateSession>(() => {
     if (typeof window === "undefined") {
@@ -246,7 +254,7 @@ export default function InstructionsPage() {
               Pre-Assessment Checks
             </h3>
             <p className="mt-1 text-[13px] text-slate-500">
-              Both checks must pass before you can start.
+              All three checks must pass before you can start.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -320,6 +328,33 @@ export default function InstructionsPage() {
                 Camera access was denied. Please enable it in your browser settings and retry.
               </p>
             )}
+
+              {/* Terms and Conditions */}
+              <div className={[
+                "mt-3 flex items-start gap-3 rounded-lg border px-4 py-3 transition",
+                termsAccepted
+                  ? "border-emerald-300 bg-emerald-50/50"
+                  : "border-zinc-200 bg-white",
+              ].join(" ")}>
+                <input
+                  id="termsAccepted"
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-emerald-600"
+                />
+                <label
+                  htmlFor="termsAccepted"
+                  className="text-[13px] leading-6 text-slate-700 cursor-pointer"
+                >
+                  I have read and understood all the instructions above. I agree to the{" "}
+                  <span className="font-semibold text-[#0f172a]">
+                    terms and conditions
+                  </span>{" "}
+                  of this assessment, including the integrity policy. I understand that
+                  tab switching will be monitored and violations may result in automatic submission.
+                </label>
+              </div>
           </section>
 
           <div className="mt-8 border-t border-zinc-200 pt-8">
@@ -367,6 +402,12 @@ export default function InstructionsPage() {
                 <li className="flex items-center gap-2 text-red-600">
                   <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
                   Camera access is required. Please grant permission.
+                </li>
+              )}
+              {!termsAccepted && (
+                <li className="flex items-center gap-2 text-red-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+                  You must accept the terms and conditions.
                 </li>
               )}
             </ul>
