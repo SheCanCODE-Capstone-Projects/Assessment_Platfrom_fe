@@ -259,10 +259,10 @@ export default function CandidateRegisterPage() {
             <>
               <header>
                 <h1 className="text-[28px] font-bold tracking-tight text-[#0f172a] sm:text-[30px]">
-                  JavaScript Developer Assessment
+                  Developer Assessment
                 </h1>
                 <p className="mt-3 text-[15px] leading-7 text-slate-600">
-                  This assessment tests your fundamental JavaScript programming skills.
+                  This assessment tests your programming skills. You will select your preferred language in the next step.
                 </p>
               </header>
 
