@@ -21,6 +21,12 @@ const INITIAL_SESSION: CandidateSession = {
   preferredLanguage: "",
 };
 
+const ASSESSMENT_STARTED_AT_KEY = "assessmentStartedAt";
+
+type AssessmentCameraWindow = Window & {
+  __assessmentCameraStream?: MediaStream;
+};
+
 const guidelineItems = [
   "Read each question carefully before writing code",
   "You can navigate between questions using the question list",
@@ -95,7 +101,7 @@ export default function InstructionsPage() {
     }
   }
 
-  function handleStartClick() {
+  async function handleStartClick() {
     if (
       readiness.camera === "idle" ||
       readiness.camera === "denied" ||
@@ -105,7 +111,21 @@ export default function InstructionsPage() {
       setShowReadinessModal(true);
       return;
     }
-    void router.push("/");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      });
+      (window as AssessmentCameraWindow).__assessmentCameraStream = stream;
+      window.sessionStorage.setItem(ASSESSMENT_STARTED_AT_KEY, String(Date.now()));
+    } catch {
+      setReadiness((r) => ({ ...r, camera: "denied" }));
+      setShowReadinessModal(true);
+      return;
+    }
+
+    void router.push("/assessment");
   }
 
   const allReady =
