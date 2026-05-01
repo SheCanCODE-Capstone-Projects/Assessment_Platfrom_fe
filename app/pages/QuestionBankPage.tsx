@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -76,176 +77,6 @@ const initialQuestions: Question[] = [
     language: "Java",
     testCases: 10,
   },
-  {
-    id: 4,
-    title: "Merge Sorted Lists",
-    difficulty: "Easy",
-    description:
-      "Merge two sorted linked lists and return the combined list with elements in ascending order.",
-    marks: 18,
-    language: "TypeScript",
-    testCases: 7,
-  },
-  {
-    id: 5,
-    title: "Max Subarray",
-    difficulty: "Medium",
-    description:
-      "Find the contiguous subarray with the largest sum within a one-dimensional array of numbers.",
-    marks: 22,
-    language: "JavaScript",
-    testCases: 9,
-  },
-  {
-    id: 6,
-    title: "Fizz Buzz",
-    difficulty: "Easy",
-    description:
-      "Print numbers from 1 to n with special rules for multiples of 3 and 5.",
-    marks: 10,
-    language: "Python",
-    testCases: 5,
-  },
-  {
-    id: 7,
-    title: "Binary Search",
-    difficulty: "Easy",
-    description:
-      "Search a sorted array to find the index of a target value using a binary search algorithm.",
-    marks: 15,
-    language: "Java",
-    testCases: 6,
-  },
-  {
-    id: 8,
-    title: "Rotate Matrix",
-    difficulty: "Medium",
-    description:
-      "Rotate an n x n 2D matrix by 90 degrees in place.",
-    marks: 24,
-    language: "TypeScript",
-    testCases: 8,
-  },
-  {
-    id: 9,
-    title: "Anagram Check",
-    difficulty: "Easy",
-    description:
-      "Determine if two strings are anagrams by comparing character counts and ordering.",
-    marks: 16,
-    language: "JavaScript",
-    testCases: 7,
-  },
-  {
-    id: 10,
-    title: "Depth First Search",
-    difficulty: "Medium",
-    description:
-      "Traverse a tree or graph using depth first search and return the order of nodes visited.",
-    marks: 20,
-    language: "Python",
-    testCases: 8,
-  },
-  {
-    id: 11,
-    title: "Find Duplicates",
-    difficulty: "Easy",
-    description:
-      "Find all duplicate values in an array without altering the original order.",
-    marks: 14,
-    language: "Java",
-    testCases: 6,
-  },
-  {
-    id: 12,
-    title: "Count Islands",
-    difficulty: "Medium",
-    description:
-      "Count the number of islands in a grid of land and water using a flood fill algorithm.",
-    marks: 26,
-    language: "TypeScript",
-    testCases: 9,
-  },
-  {
-    id: 13,
-    title: "Palindromic Substring",
-    difficulty: "Medium",
-    description:
-      "Find the longest palindromic substring in a given string.",
-    marks: 25,
-    language: "JavaScript",
-    testCases: 10,
-  },
-  {
-    id: 14,
-    title: "Tree Height",
-    difficulty: "Easy",
-    description:
-      "Compute the height of a binary tree using recursion.",
-    marks: 18,
-    language: "Python",
-    testCases: 7,
-  },
-  {
-    id: 15,
-    title: "Queue using Stacks",
-    difficulty: "Medium",
-    description:
-      "Implement a queue with two stacks while preserving FIFO behavior.",
-    marks: 23,
-    language: "Java",
-    testCases: 8,
-  },
-  {
-    id: 16,
-    title: "Word Search",
-    difficulty: "Medium",
-    description:
-      "Search for a word in a 2D board of letters using backtracking.",
-    marks: 25,
-    language: "TypeScript",
-    testCases: 10,
-  },
-  {
-    id: 17,
-    title: "JSON Validator",
-    difficulty: "Easy",
-    description:
-      "Validate a JSON string by checking proper syntax and string formatting.",
-    marks: 15,
-    language: "JavaScript",
-    testCases: 6,
-  },
-  {
-    id: 18,
-    title: "Longest Common Prefix",
-    difficulty: "Easy",
-    description:
-      "Find the longest common prefix among an array of strings.",
-    marks: 14,
-    language: "Python",
-    testCases: 6,
-  },
-  {
-    id: 19,
-    title: "Inorder Traversal",
-    difficulty: "Medium",
-    description:
-      "Return the inorder traversal of a binary tree without recursion.",
-    marks: 22,
-    language: "Java",
-    testCases: 8,
-  },
-  {
-    id: 20,
-    title: "Cache Eviction",
-    difficulty: "Medium",
-    description:
-      "Implement a simple LRU cache that evicts the least recently used item.",
-    marks: 28,
-    language: "TypeScript",
-    testCases: 10,
-  },
 ];
 
 const emptyFormValues: QuestionFormValues = {
@@ -256,9 +87,6 @@ const emptyFormValues: QuestionFormValues = {
   language: "",
   testCases: "",
 };
-
-const QUESTIONS_PER_PAGE = 2;
-const MAX_PAGE_COUNT = 10;
 
 function CodeAssessIcon() {
   return (
@@ -288,12 +116,11 @@ function CodeAssessIcon() {
 }
 
 function QuestionBankHeader({
-  questionCount,
   searchQuery,
   onSearchChange,
 }: QuestionBankHeaderProps) {
   return (
-    <nav className="flex flex-col gap-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <nav className="flex flex-col gap-4 rounded-3xl border border-zinc-900 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
         <Link
           href="/admin"
@@ -320,7 +147,7 @@ function QuestionBankHeader({
           <CodeAssessIcon />
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-600">
-              CodeAssess
+              Code Assess
             </p>
             <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
               Question Bank
@@ -767,7 +594,6 @@ export default function QuestionBankPage() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const activeQuestion = useMemo(
     () => questions.find((question) => question.id === activeQuestionId) ?? null,
@@ -840,33 +666,6 @@ export default function QuestionBankPage() {
     question.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const pageCount = Math.min(
-    MAX_PAGE_COUNT,
-    Math.max(1, Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE))
-  );
-
-  useEffect(() => {
-    const lastValidPage = Math.min(
-      MAX_PAGE_COUNT,
-      Math.max(1, Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE))
-    );
-
-    if (currentPage > lastValidPage) {
-      setCurrentPage(lastValidPage);
-    }
-  }, [filteredQuestions.length, currentPage]);
-
-  const visibleQuestions = filteredQuestions.slice(
-    (currentPage - 1) * QUESTIONS_PER_PAGE,
-    currentPage * QUESTIONS_PER_PAGE
-  );
-
-  const pageNumbers = Array.from({ length: pageCount }, (_, index) => index + 1);
-  const hasPreviousPage = currentPage > 1;
-  const hasNextPage = currentPage < pageCount;
-  const startIndex = filteredQuestions.length === 0 ? 0 : (currentPage - 1) * QUESTIONS_PER_PAGE + 1;
-  const endIndex = Math.min(currentPage * QUESTIONS_PER_PAGE, filteredQuestions.length);
-
   return (
     <main className="min-h-screen bg-zinc-50">
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
@@ -883,51 +682,10 @@ export default function QuestionBankPage() {
 
         <div className="mt-6">
           <QuestionList
-            questions={visibleQuestions}
+            questions={filteredQuestions}
             onEdit={openEditModal}
             onDelete={handleDelete}
           />
-
-          <div className="mt-4 flex flex-col items-center justify-between gap-4 rounded-3xl border border-zinc-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:px-5">
-            <p className="text-sm text-zinc-500">
-              Showing {startIndex}-{endIndex} of {filteredQuestions.length} questions
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                disabled={!hasPreviousPage}
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Previous
-              </button>
-
-              {pageNumbers.map((pageNumber) => (
-                <button
-                  key={pageNumber}
-                  type="button"
-                  onClick={() => setCurrentPage(pageNumber)}
-                  className={`inline-flex h-10 min-w-[2.5rem] items-center justify-center rounded-full border px-4 text-sm font-medium transition ${
-                    pageNumber === currentPage
-                      ? "border-emerald-500 bg-emerald-500 text-white"
-                      : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                disabled={!hasNextPage}
-                onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -942,3 +700,4 @@ export default function QuestionBankPage() {
     </main>
   );
 }
+
