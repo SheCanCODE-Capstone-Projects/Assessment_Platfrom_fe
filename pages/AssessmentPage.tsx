@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import MonacoEditor from "@monaco-editor/react";
 
 import Navbar from "@/src/components/layout/Navbar";
 import Button from "@/src/components/ui/Button";
@@ -98,8 +99,8 @@ const questions: Question[] = [
     testCases: [
       {
         label: "Test Case 1",
-        input: "['h', 'e', 'l', 'l', 'o']",
-        expected: "['o', 'l', 'l', 'e', 'h']",
+        input: "['h','e','l','l','o']",
+        expected: "['o','l','l','e','h']",
       },
     ],
     functionName: "reverseString",
@@ -268,37 +269,34 @@ function useCameraMonitoring({
   disabled: boolean;
   onCameraBlocked: (message: string) => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>("opening");
 
+  // callback ref — fires as soon as the <video> element mounts
+  const videoRef = useCallback((el: HTMLVideoElement | null) => {
+    if (!el || !streamRef.current) return;
+    el.srcObject = streamRef.current;
+    void el.play().catch(() => null);
+  }, []);
+
   useEffect(() => {
+    if (disabled) return;
     let cancelled = false;
 
     async function openCamera() {
-      if (disabled) return;
-
       if (!navigator.mediaDevices?.getUserMedia) {
         setCameraStatus("blocked");
-        onCameraBlocked("Camera access is not supported by this browser.");
+        onCameraBlocked("Camera not supported in this browser.");
         return;
       }
-
       try {
-        setCameraStatus("opening");
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
+          video: { facingMode: "user", width: 320, height: 240 },
           audio: false,
         });
-
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
         streamRef.current = stream;
         (window as AssessmentCameraWindow).__assessmentCameraStream = stream;
-
         setCameraStatus("active");
       } catch {
         if (!cancelled) {
@@ -309,22 +307,13 @@ function useCameraMonitoring({
     }
 
     void openCamera();
-
     return () => {
       cancelled = true;
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
       delete (window as AssessmentCameraWindow).__assessmentCameraStream;
     };
   }, [disabled, onCameraBlocked]);
-
-  // attach stream to video element once both are ready
-  useEffect(() => {
-    if (cameraStatus === "active" && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-      void videoRef.current.play().catch(() => null);
-    }
-  }, [cameraStatus]);
 
   return { cameraStatus, videoRef };
 }
@@ -370,6 +359,16 @@ function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
   );
 }
 
+const MONACO_LANGUAGE: Record<Language, string> = {
+  JavaScript: "javascript",
+  TypeScript: "typescript",
+  Python: "python",
+  Java: "java",
+  "C++": "cpp",
+  "C#": "csharp",
+  PHP: "php",
+};
+
 function CodeEditor({
   code,
   language,
@@ -379,29 +378,34 @@ function CodeEditor({
   language: Language;
   onChange: (value: string) => void;
 }) {
-  const lineCount = Math.max(code.split("\n").length, 12);
-  const lines = Array.from({ length: lineCount }, (_, index) => index + 1);
-
   return (
-    <section className="border-t border-zinc-800 bg-[#1e1e1e]">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 text-xs text-zinc-400">
+    <section className="border-t border-zinc-800">
+      <div className="flex items-center justify-between border-b border-zinc-800 bg-[#1e1e1e] px-4 py-2 text-xs text-zinc-400">
         <span className="uppercase tracking-wide">{language}</span>
-        <span>Monaco Editor</span>
+        <span>VS Code Editor</span>
       </div>
-      <div className="grid min-h-[300px] grid-cols-[48px_1fr] overflow-hidden font-mono text-[13px] leading-6 sm:min-h-[360px]">
-        <div className="select-none bg-[#1a1a1a] px-3 py-4 text-right text-zinc-500">
-          {lines.map((line) => (
-            <div key={line}>{line}</div>
-          ))}
-        </div>
-        <textarea
-          aria-label={`${language} code editor`}
-          value={code}
-          onChange={(event) => onChange(event.target.value)}
-          spellCheck="false"
-          className="min-h-[300px] resize-none bg-[#1e1e1e] px-4 py-4 text-[#d4d4d4] caret-emerald-400 outline-none selection:bg-emerald-500/30 sm:min-h-[360px]"
-        />
-      </div>
+      <MonacoEditor
+        height="400px"
+        language={MONACO_LANGUAGE[language]}
+        value={code}
+        theme="vs-dark"
+        onChange={(val) => onChange(val ?? "")}
+        options={{
+          fontSize: 14,
+          fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
+          fontLigatures: true,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          lineNumbers: "on",
+          renderLineHighlight: "line",
+          tabSize: 2,
+          wordWrap: "on",
+          automaticLayout: true,
+          padding: { top: 16, bottom: 16 },
+          cursorBlinking: "smooth",
+          smoothScrolling: true,
+        }}
+      />
     </section>
   );
 }
@@ -411,12 +415,12 @@ function CameraMonitor({
   videoRef,
 }: {
   status: CameraStatus;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoRef: (el: HTMLVideoElement | null) => void;
 }) {
   const active = status === "active";
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-[168px] sm:w-[200px] overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl">
+    <div className="fixed bottom-4 left-4 z-40 w-[168px] sm:w-[200px] overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between bg-zinc-800 px-2.5 py-1.5">
         <div className="flex items-center gap-1.5">
@@ -652,13 +656,9 @@ export default function AssessmentPage() {
             <Button
               variant="outline"
               tone="zinc"
-              disabled={submitted}
-              onClick={() =>
-                setActiveIndex((current) =>
-                  current === 0 ? questions.length - 1 : current - 1
-                )
-              }
-              className="justify-self-start gap-2 rounded-md px-4"
+              disabled={submitted || activeIndex === 0}
+              onClick={() => setActiveIndex((current) => current - 1)}
+              className="justify-self-start gap-2 rounded-md px-4 hover:bg-zinc-100 hover:border-zinc-400 active:scale-95 transition-all"
             >
               <ChevronIcon direction="left" />
               Previous
@@ -668,12 +668,8 @@ export default function AssessmentPage() {
             </span>
             <Button
               tone="green"
-              disabled={submitted}
-              onClick={() =>
-                setActiveIndex((current) =>
-                  current === questions.length - 1 ? 0 : current + 1
-                )
-              }
+              disabled={submitted || activeIndex === questions.length - 1}
+              onClick={() => setActiveIndex((current) => current + 1)}
               className="justify-self-end gap-2 rounded-md bg-emerald-600 px-5 hover:bg-emerald-700"
             >
               Next

@@ -153,6 +153,7 @@ export default function CandidateRegisterPage() {
   const [idPhoto, setIdPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const applyPhoto = useCallback((file: File) => {
@@ -242,12 +243,22 @@ export default function CandidateRegisterPage() {
       );
     }
 
-    void router.push("/instructions");
+    setShowSuccess(true);
+    setTimeout(() => void router.push("/instructions"), 1500);
   }
 
   return (
     <div className="min-h-screen bg-zinc-50">
       <Navbar right={<span aria-hidden="true" />} />
+
+      {showSuccess && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-white border border-zinc-200 px-5 py-3 shadow-xl">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+            <path d="m5 12 5 5L20 7" />
+          </svg>
+          <p className="text-[13px] font-semibold text-zinc-900">Information saved successfully!</p>
+        </div>
+      )}
 
       <main className="px-4 py-10 sm:px-6 sm:py-14">
         <section className="mx-auto w-full max-w-[610px] rounded-xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10">
