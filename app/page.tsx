@@ -1,7 +1,7 @@
-import Navbar from "@/src/components/layout/Navbar";
-import FeatureCard from "@/src/components/cards/FeatureCard";
-import Button from "@/src/components/ui/Button";
-import Footer from "@/src/components/layout/Footer";
+import Navbar from "@/components/layout/Navbar";
+import FeatureCard from "@/components/cards/FeatureCard";
+import Button from "@/components/ui/Button";
+import Footer from "@/components/layout/Footer";
 
 
 

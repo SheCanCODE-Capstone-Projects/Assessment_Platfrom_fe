@@ -1,7 +1,7 @@
+import Button from "@/components/ui/Button"
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import Button from "@/src/components/ui/Button";
 
 export type NavbarProps = {
   brand?: {

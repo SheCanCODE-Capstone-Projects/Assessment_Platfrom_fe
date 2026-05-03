@@ -1,8 +1,8 @@
-import Navbar from "@/src/components/layout/Navbar";
-import FeatureCard from "@/src/components/cards/FeatureCard";
-import StatCard from "@/src/components/cards/StatCard";
-import Footer from "@/src/components/layout/Footer";
-import Button from "@/src/components/ui/Button";
+import Navbar from "@/components/layout/Navbar";
+import FeatureCard from "@/components/cards/FeatureCard";
+import StatCard from "@/components/cards/StatCard";
+import Footer from "@/components/layout/Footer";
+import Button from "@/components/ui/Button";
 
 function Icon({
   d,

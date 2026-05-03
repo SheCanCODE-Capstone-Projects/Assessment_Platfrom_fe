@@ -1,6 +1,6 @@
  "use client";
 
-import Footer from "@/src/components/layout/Footer";
+import Footer from "@/components/layout/Footer";
 import { useRouter } from "next/navigation";
 
 
