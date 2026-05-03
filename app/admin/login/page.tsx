@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import Navbar from "@/src/components/layout/Navbar";
-import Footer from "@/src/components/layout/Footer";
 import Card from "@/src/components/ui/Card";
 import Button from "@/src/components/ui/Button";
 
@@ -17,7 +16,7 @@ export default function AdminLoginPage() {
 
   const handleLogin = () => {
     if (email === "admin@codeassess.com" && password === "password") {
-      router.push("/admin"); // go to dashboard
+      router.push("/admin");
     } else {
       setError("Invalid email or password");
     }
@@ -30,7 +29,7 @@ export default function AdminLoginPage() {
 
       <main className="flex flex-1 items-center justify-center px-6">
         
-        <Card className="w-full max-w-md p-8">
+        <Card className="w-full max-w-md p-8 min-h-[420px] flex flex-col justify-center">
           
           <h2 className="text-xl font-semibold text-center text-zinc-900">
             Admin Login
@@ -42,7 +41,6 @@ export default function AdminLoginPage() {
 
           <div className="mt-6 space-y-4">
             
-            {/* Email */}
             <input
               type="email"
               placeholder="admin@codeassess.com"
@@ -51,7 +49,6 @@ export default function AdminLoginPage() {
               className="w-full border border-zinc-300 rounded-md px-3 py-2"
             />
 
-            {/* Password */}
             <input
               type="password"
               placeholder="Enter your password"
@@ -60,7 +57,6 @@ export default function AdminLoginPage() {
               className="w-full border border-zinc-300 rounded-md px-3 py-2"
             />
 
-            {/* Button */}
             <Button
               onClick={handleLogin}
               tone="green"
@@ -69,24 +65,23 @@ export default function AdminLoginPage() {
               Login
             </Button>
 
-            {/* Error */}
             {error && (
               <p className="text-red-500 text-sm text-center">
                 {error}
               </p>
             )}
 
-            <p className="text-center text-xs text-zinc-500">
-              Demo: admin@codeassess.com / password
-            </p>
+            {process.env.NODE_ENV === "development" && (
+  <p className="text-center text-xs text-zinc-500">
+    Demo: admin@codeassess.com / password
+  </p>
+)}
 
           </div>
 
         </Card>
 
       </main>
-
-      <Footer />
     </div>
   );
 }
