@@ -8,6 +8,9 @@ import AssignQuestionModal, { type AssignQuestionPayload } from "@/components/mo
 import Footer from "@/components/layout/Footer";
 
 type StatusFilter = "all" | ExamStatus;
+type ConfirmAction =
+  | { type: "delete"; examId: string; examTitle: string }
+  | { type: "status"; examId: string; examTitle: string; nextStatus: ExamStatus };
 
 function ArrowLeftIcon() {
   return (
@@ -66,6 +69,57 @@ function AdminHeader({
   );
 }
 
+function ConfirmDialog({
+  action,
+  onCancel,
+  onConfirm,
+}: {
+  action: ConfirmAction | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  if (!action) return null;
+
+  const isDelete = action.type === "delete";
+  const title = isDelete ? "Delete Exam" : "Change Exam Status";
+  const message = isDelete
+    ? `Are you sure you want to delete "${action.examTitle}"?`
+    : `Are you sure you want to change "${action.examTitle}" to ${action.nextStatus === "ACTIVE" ? "active" : "inactive"}?`;
+  const confirmLabel = isDelete ? "Delete" : "Change";
+  const confirmClass = isDelete
+    ? "bg-red-500 hover:bg-red-600 focus-visible:ring-red-400/50"
+    : "bg-orange-500 hover:bg-orange-600 focus-visible:ring-orange-400/50";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white shadow-xl">
+        <div className="border-b border-zinc-100 px-6 py-4">
+          <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
+        </div>
+        <div className="px-6 py-5">
+          <p className="text-sm leading-6 text-zinc-600">{message}</p>
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-6 py-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`inline-flex h-9 items-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 ${confirmClass}`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const INITIAL_EXAMS: ExamCardData[] = [
   {
     id: "123",
@@ -81,12 +135,19 @@ const INITIAL_EXAMS: ExamCardData[] = [
   },
 ];
 
+const INITIAL_EXAM_QUESTION_IDS: Record<string, string[]> = {
+  "123": ["q1", "q2", "q3"],
+};
+
 const PAGE_SIZE = 4;
 
 export default function ExamManagementPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingExamId, setEditingExamId] = useState<string | null>(null);
   const [assignExamId, setAssignExamId] = useState<string | null>(null);
   const [exams, setExams] = useState<ExamCardData[]>(INITIAL_EXAMS);
+  const [examQuestionIds, setExamQuestionIds] = useState<Record<string, string[]>>(INITIAL_EXAM_QUESTION_IDS);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -113,6 +174,7 @@ export default function ExamManagementPage() {
   const activeCount = exams.filter((exam) => exam.status === "ACTIVE").length;
   const inactiveCount = exams.length - activeCount;
   const assignExam = exams.find((exam) => exam.id === assignExamId);
+  const editingExam = exams.find((exam) => exam.id === editingExamId);
 
   const changeStatusFilter = (nextFilter: StatusFilter) => {
     setStatusFilter(nextFilter);
@@ -141,6 +203,36 @@ export default function ExamManagementPage() {
     setPage(1);
   };
 
+  const handleUpdateExam = (payload: CreateExamPayload) => {
+    if (!editingExamId) return;
+
+    setExams((prev) =>
+      prev.map((exam) =>
+        exam.id === editingExamId
+          ? {
+              ...exam,
+              title: payload.examTitle,
+              description: payload.description,
+              duration: payload.timeValue,
+              timeUnit: payload.timeUnit,
+              passMark: payload.passMark,
+              status: payload.status,
+            }
+          : exam
+      )
+    );
+    setEditingExamId(null);
+  };
+
+  const deleteExam = (examId: string) => {
+    setExams((prev) => prev.filter((item) => item.id !== examId));
+    setExamQuestionIds((prev) => {
+      const next = { ...prev };
+      delete next[examId];
+      return next;
+    });
+  };
+
   const toggleExamStatus = (examId?: string) => {
     if (!examId) return;
 
@@ -153,20 +245,46 @@ export default function ExamManagementPage() {
     );
   };
 
+  const handleConfirmAction = () => {
+    if (!confirmAction) return;
+
+    if (confirmAction.type === "delete") {
+      deleteExam(confirmAction.examId);
+    } else {
+      toggleExamStatus(confirmAction.examId);
+    }
+
+    setConfirmAction(null);
+  };
+
   const handleAssignQuestion = (payload: AssignQuestionPayload) => {
     if (!assignExamId) return;
+
+    const assignedIds = new Set(examQuestionIds[assignExamId] ?? []);
+    const newQuestions = payload.questions.filter((question) => !assignedIds.has(question.id));
+
+    if (newQuestions.length === 0) return;
 
     setExams((prev) =>
       prev.map((exam) =>
         exam.id === assignExamId
           ? {
               ...exam,
-              questions: exam.questions + 1,
-              totalMarks: exam.totalMarks + payload.marks,
+              questions: exam.questions + newQuestions.length,
+              totalMarks:
+                exam.totalMarks +
+                newQuestions.reduce((total, question) => total + question.marks, 0),
             }
           : exam
       )
     );
+    setExamQuestionIds((prev) => ({
+      ...prev,
+      [assignExamId]: [
+        ...(prev[assignExamId] ?? []),
+        ...newQuestions.map((question) => question.id),
+      ],
+    }));
   };
 
   return (
@@ -264,10 +382,30 @@ export default function ExamManagementPage() {
               <ExamCard
                 key={exam.id}
                 exam={exam}
-                onEdit={() => undefined}
-                onDelete={() => setExams((prev) => prev.filter((item) => item.id !== exam.id))}
+                onEdit={() => {
+                  setEditingExamId(exam.id ?? null);
+                  setModalOpen(true);
+                }}
+                onDelete={() => {
+                  if (!exam.id) return;
+
+                  setConfirmAction({
+                    type: "delete",
+                    examId: exam.id,
+                    examTitle: exam.title,
+                  });
+                }}
                 onAssignQuestions={() => setAssignExamId(exam.id ?? null)}
-                onToggleStatus={() => toggleExamStatus(exam.id)}
+                onToggleStatus={() => {
+                  if (!exam.id) return;
+
+                  setConfirmAction({
+                    type: "status",
+                    examId: exam.id,
+                    examTitle: exam.title,
+                    nextStatus: exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+                  });
+                }}
               />
             ))}
 
@@ -311,15 +449,38 @@ export default function ExamManagementPage() {
 
       <CreateExamModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreate={handleCreateExam}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingExamId(null);
+        }}
+        onCreate={editingExam ? handleUpdateExam : handleCreateExam}
+        mode={editingExam ? "edit" : "create"}
+        initialExam={
+          editingExam
+            ? {
+                examTitle: editingExam.title,
+                description: editingExam.description,
+                timeValue: editingExam.duration,
+                timeUnit: editingExam.timeUnit ?? "MINUTES",
+                passMark: editingExam.passMark,
+                status: editingExam.status,
+              }
+            : undefined
+        }
       />
 
       <AssignQuestionModal
         open={assignExamId !== null}
         examTitle={assignExam?.title}
+        assignedQuestionIds={assignExamId ? examQuestionIds[assignExamId] ?? [] : []}
         onClose={() => setAssignExamId(null)}
         onAssign={handleAssignQuestion}
+      />
+
+      <ConfirmDialog
+        action={confirmAction}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
       />
 
       <Footer />

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CreateExamModal, { type CreateExamPayload } from "@/components/modals/CreateExamModal";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
 
@@ -19,7 +21,9 @@ type Exam = {
   title: string;
   description: string;
   duration: number;
+  timeUnit: "SECONDS" | "MINUTES" | "HOURS";
   passMark: number;
+  status: "ACTIVE" | "INACTIVE";
   questions: Question[];
   totalMarks: number;
   link: string;
@@ -31,7 +35,9 @@ const EXAM: Exam = {
   title: "JavaScript Developer Assessment",
   description: "Assess core JavaScript skills including problem solving, data structures, and language fundamentals.",
   duration: 60,
+  timeUnit: "MINUTES",
   passMark: 70,
+  status: "ACTIVE",
   totalMarks: 60,
   link: "https://codeassess.com/exam/123",
   questions: [
@@ -158,7 +164,22 @@ function QuestionCard({ question, index }: { question: Question; index: number }
 
 export default function ExamDetailPage() {
   const router = useRouter();
-  const exam = EXAM;
+  const [exam, setExam] = useState(EXAM);
+  const [editOpen, setEditOpen] = useState(false);
+
+  const handleUpdateExam = (payload: CreateExamPayload) => {
+    setExam((prev) => ({
+      ...prev,
+      title: payload.examTitle,
+      description: payload.description,
+      duration: payload.timeValue,
+      timeUnit: payload.timeUnit,
+      passMark: payload.passMark,
+      status: payload.status,
+    }));
+  };
+
+  const timeUnitLabel = exam.timeUnit === "SECONDS" ? "sec" : exam.timeUnit === "HOURS" ? "hr" : "min";
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">
@@ -187,6 +208,7 @@ export default function ExamDetailPage() {
           </div>
           <button
             type="button"
+            onClick={() => setEditOpen(true)}
             className="inline-flex h-9 items-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
           >
             Edit Exam
@@ -202,7 +224,7 @@ export default function ExamDetailPage() {
           <p className="mt-1 text-sm leading-6 text-zinc-500">{exam.description}</p>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <StatPill icon={<ClockIcon />} label={`${exam.duration} min`} />
+            <StatPill icon={<ClockIcon />} label={`${exam.duration} ${timeUnitLabel}`} />
             <StatPill icon={<TargetIcon />} label={`${exam.passMark}% pass mark`} />
             <StatPill
               icon={<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>}
@@ -265,6 +287,21 @@ export default function ExamDetailPage() {
         </div>
 
       </main>
+
+      <CreateExamModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onCreate={handleUpdateExam}
+        mode="edit"
+        initialExam={{
+          examTitle: exam.title,
+          description: exam.description,
+          timeValue: exam.duration,
+          timeUnit: exam.timeUnit,
+          passMark: exam.passMark,
+          status: exam.status,
+        }}
+      />
     </div>
   );
 }

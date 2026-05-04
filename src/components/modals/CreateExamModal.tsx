@@ -10,21 +10,48 @@ export type CreateExamPayload = {
   timeValue: number;
   timeUnit: TimeUnit;
   passMark: number;
-  status: "ACTIVE";
+  status: "ACTIVE" | "INACTIVE";
 };
 
 type CreateExamModalProps = {
   open: boolean;
   onClose: () => void;
   onCreate?: (payload: CreateExamPayload) => void;
+  initialExam?: CreateExamPayload;
+  mode?: "create" | "edit";
 };
 
-export default function CreateExamModal({ open, onClose, onCreate }: CreateExamModalProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [timeLimit, setTimeLimit] = useState(60);
-  const [timeUnit, setTimeUnit] = useState<TimeUnit>("MINUTES");
-  const [passMark, setPassMark] = useState(70);
+export default function CreateExamModal({
+  open,
+  onClose,
+  onCreate,
+  initialExam,
+  mode = "create",
+}: CreateExamModalProps) {
+  if (!open) return null;
+
+  return (
+    <CreateExamModalContent
+      onClose={onClose}
+      onCreate={onCreate}
+      initialExam={initialExam}
+      mode={mode}
+    />
+  );
+}
+
+function CreateExamModalContent({
+  onClose,
+  onCreate,
+  initialExam,
+  mode,
+}: Omit<CreateExamModalProps, "open"> & { mode: "create" | "edit" }) {
+  const [title, setTitle] = useState(initialExam?.examTitle ?? "");
+  const [description, setDescription] = useState(initialExam?.description ?? "");
+  const [timeLimit, setTimeLimit] = useState(initialExam?.timeValue ?? 60);
+  const [timeUnit, setTimeUnit] = useState<TimeUnit>(initialExam?.timeUnit ?? "MINUTES");
+  const [passMark, setPassMark] = useState(initialExam?.passMark ?? 70);
+  const isEditMode = mode === "edit";
 
   const resetForm = () => {
     setTitle("");
@@ -41,13 +68,11 @@ export default function CreateExamModal({ open, onClose, onCreate }: CreateExamM
       timeValue: timeLimit,
       timeUnit,
       passMark,
-      status: "ACTIVE",
+      status: initialExam?.status ?? "ACTIVE",
     });
     resetForm();
     onClose();
   };
-
-  if (!open) return null;
 
   return (
     <div
@@ -58,7 +83,9 @@ export default function CreateExamModal({ open, onClose, onCreate }: CreateExamM
     >
       <div className="relative w-full max-w-lg rounded-xl border border-zinc-200 bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-zinc-900">Create New Exam</h2>
+          <h2 className="text-base font-semibold text-zinc-900">
+            {isEditMode ? "Edit Exam" : "Create New Exam"}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -155,7 +182,7 @@ export default function CreateExamModal({ open, onClose, onCreate }: CreateExamM
             onClick={handleSubmit}
             className="inline-flex h-9 items-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50"
           >
-            Create Exam
+            {isEditMode ? "Save Changes" : "Create Exam"}
           </button>
         </div>
       </div>
