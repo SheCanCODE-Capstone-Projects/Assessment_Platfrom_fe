@@ -595,6 +595,9 @@ export default function QuestionBankPage() {
   const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
+    const [currentPage, setCurrentPage] = useState(1);
+  const questionsPerPage = 3;
+
   const activeQuestion = useMemo(
     () => questions.find((question) => question.id === activeQuestionId) ?? null,
     [activeQuestionId, questions]
@@ -666,6 +669,15 @@ export default function QuestionBankPage() {
     question.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+const totalPages = 10;
+
+const startIndex = (currentPage - 1) * questionsPerPage;
+const paginatedQuestions = filteredQuestions.slice(
+  startIndex,
+  startIndex + questionsPerPage
+);
+
+
   return (
     <main className="min-h-screen bg-zinc-50">
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
@@ -682,12 +694,50 @@ export default function QuestionBankPage() {
 
         <div className="mt-6">
           <QuestionList
-            questions={filteredQuestions}
+            
+  questions={paginatedQuestions}
             onEdit={openEditModal}
             onDelete={handleDelete}
           />
         </div>
       </div>
+
+      <div className="mt-6 flex items-center justify-between">
+  {/* Previous */}
+  <button
+    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+    className="rounded-lg border px-4 py-2 text-sm disabled:opacity-50"
+  >
+    Previous
+  </button>
+
+  {/* Page Numbers */}
+  <div className="flex gap-2">
+    {Array.from({ length: 10 }, (_, i) => i + 1).map((page) => (
+      <button
+        key={page}
+        onClick={() => setCurrentPage(page)}
+        className={`px-3 py-1 rounded-lg text-sm ${
+          currentPage === page
+            ? "bg-emerald-600 text-white"
+            : "border"
+        }`}
+      >
+        {page}
+      </button>
+    ))}
+  </div>
+
+  {/* Next */}
+  <button
+    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, 10))}
+    disabled={currentPage === 10}
+    className="rounded-lg border px-4 py-2 text-sm disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
 
       {modalMode ? (
         <CreateQuestionModal
