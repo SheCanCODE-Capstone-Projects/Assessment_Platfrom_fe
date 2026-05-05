@@ -12,6 +12,7 @@ import { useRouter } from "next/router";
 
 import Navbar from "@/src/components/layout/Navbar";
 import Button from "@/src/components/ui/Button";
+import SuccessToast from "@/src/components/feedback/SuccessToast";
 
 const LANGUAGE_OPTIONS = [
   "JavaScript",
@@ -261,12 +262,7 @@ export default function CandidateRegisterPage() {
       <Navbar right={<span aria-hidden="true" />} />
 
       {showSuccess && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-white border border-zinc-200 px-5 py-3 shadow-xl">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-            <path d="m5 12 5 5L20 7" />
-          </svg>
-          <p className="text-[13px] font-semibold text-zinc-900">Information saved successfully!</p>
-        </div>
+        <SuccessToast message="Information saved successfully!" />
       )}
 
       <main className="px-4 py-10 sm:px-6 sm:py-14">

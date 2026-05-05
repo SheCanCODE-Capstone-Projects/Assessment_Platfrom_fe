@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import MonacoEditor from "@monaco-editor/react";
 
 import Navbar from "@/src/components/layout/Navbar";
 import Button from "@/src/components/ui/Button";
 import CameraMonitor from "@/src/features/assessment-session/components/CameraMonitor";
+import SubmitConfirmModal from "@/src/components/modals/SubmitConfirmModal";
 
 const TOTAL_SECONDS = 60 * 60;
 const MAX_TAB_VIOLATIONS = 3;
@@ -366,16 +368,19 @@ function CodeEditor({
 }
 
 export default function AssessmentPage() {
+  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedLanguage] = useState<Language>(getCandidateLanguage);
   const [toast, setToast] = useState("");
   const [, setViolations] = useState(0);
   const violationsRef = useRef(0);
   const [submitted, setSubmitted] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const submitAssessment = useCallback((reason: SubmitReason = "manual") => {
     setSubmitted(true);
+    setShowSubmitModal(false);
     setToast(
       reason === "timer"
         ? "Time is up. Your assessment has been submitted."
@@ -385,12 +390,18 @@ export default function AssessmentPage() {
     );
 
     if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(
-        "assessmentSubmission",
-        JSON.stringify({ submittedAt: new Date().toISOString(), reason })
-      );
+      try {
+        window.sessionStorage.setItem(
+          "assessmentSubmission",
+          JSON.stringify({ submittedAt: new Date().toISOString(), reason })
+        );
+      } catch {
+        // Keep submission moving if browser storage is unavailable.
+      }
     }
-  }, []);
+
+    void router.push("/submitted");
+  }, [router]);
 
   const handleCameraBlocked = useCallback((message: string) => {
     setToast(message);
@@ -439,7 +450,7 @@ export default function AssessmentPage() {
               <ClockIcon />
               <span>{formatTime(secondsLeft)}</span>
             </div>
-            <Button tone="orange" onClick={() => submitAssessment("manual")} disabled={submitted} className="h-10 rounded-md px-5 font-semibold">
+            <Button tone="orange" onClick={() => setShowSubmitModal(true)} disabled={submitted} className="h-10 rounded-md px-5 font-semibold">
               Submit
             </Button>
           </div>
@@ -447,6 +458,12 @@ export default function AssessmentPage() {
       />
 
       <Toast message={toast} tone={submitted ? "danger" : "warning"} />
+      <SubmitConfirmModal
+        isOpen={showSubmitModal}
+        isSubmitting={submitted}
+        onCancel={() => setShowSubmitModal(false)}
+        onConfirm={() => submitAssessment("manual")}
+      />
       <CameraMonitor
         className="bottom-4 left-4 z-40"
         disabled={submitted}
