@@ -7,6 +7,7 @@ import {
   type ReactNode,
   type DragEvent,
 } from "react";
+import Image from "next/image";
 import { useRouter } from "next/router";
 
 import Navbar from "@/src/components/layout/Navbar";
@@ -166,6 +167,11 @@ export default function CandidateRegisterPage() {
     setErrors((c) => ({ ...c, idPhoto: "" }));
     const reader = new FileReader();
     reader.onload = (e) => setPhotoPreview(e.target?.result as string);
+    reader.onerror = () => {
+      setPhotoPreview(null);
+      setIdPhoto(null);
+      setErrors((c) => ({ ...c, idPhoto: "Failed to read file. Please try again." }));
+    };
     reader.readAsDataURL(file);
   }, []);
 
@@ -233,14 +239,17 @@ export default function CandidateRegisterPage() {
     if (Object.values(nextErrors).some(Boolean)) return;
 
     if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(
-        "candidateRegistration",
-        JSON.stringify({
-          fullName: formValues.fullName.trim(),
-          preferredLanguage: formValues.preferredLanguage.trim(),
-          idPhoto: photoPreview,
-        })
-      );
+      try {
+        window.sessionStorage.setItem(
+          "candidateRegistration",
+          JSON.stringify({
+            fullName: formValues.fullName.trim(),
+            preferredLanguage: formValues.preferredLanguage.trim(),
+          })
+        );
+      } catch {
+        // Keep registration moving if browser storage is unavailable.
+      }
     }
 
     setShowSuccess(true);
@@ -298,9 +307,12 @@ export default function CandidateRegisterPage() {
 
                 {photoPreview ? (
                   <div className="flex items-start gap-4 rounded-lg border border-emerald-200 bg-emerald-50/40 p-4">
-                    <img
+                    <Image
                       src={photoPreview}
                       alt="ID preview"
+                      width={144}
+                      height={96}
+                      unoptimized
                       className="h-24 w-36 rounded-md object-cover border border-zinc-200 shadow-sm shrink-0"
                     />
                     <div className="flex flex-col gap-1 min-w-0">
@@ -327,7 +339,12 @@ export default function CandidateRegisterPage() {
                     role="button"
                     tabIndex={0}
                     onClick={() => fileInputRef.current?.click()}
-                    onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}

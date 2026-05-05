@@ -3,6 +3,7 @@ import MonacoEditor from "@monaco-editor/react";
 
 import Navbar from "@/src/components/layout/Navbar";
 import Button from "@/src/components/ui/Button";
+import CameraMonitor from "@/src/features/assessment-session/components/CameraMonitor";
 
 const TOTAL_SECONDS = 60 * 60;
 const MAX_TAB_VIOLATIONS = 3;
@@ -11,7 +12,6 @@ const ASSESSMENT_STARTED_AT_KEY = "assessmentStartedAt";
 type Difficulty = "Easy" | "Medium";
 type Language = "JavaScript" | "Python" | "Java" | "C++" | "TypeScript" | "C#" | "PHP";
 type SubmitReason = "manual" | "timer" | "integrity";
-type CameraStatus = "opening" | "active" | "blocked";
 
 type TestCase = {
   label: string;
@@ -36,10 +36,6 @@ type Question = {
 
 type CandidateSession = {
   preferredLanguage?: string;
-};
-
-type AssessmentCameraWindow = Window & {
-  __assessmentCameraStream?: MediaStream;
 };
 
 const languageOptions: Language[] = [
@@ -212,6 +208,7 @@ function useTimer({
     const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
     return Math.max(initialSeconds - elapsedSeconds, 0);
   });
+  const completedRef = useRef(false);
 
   useEffect(() => {
     if (paused) return undefined;
@@ -230,7 +227,15 @@ function useTimer({
   }, [initialSeconds, paused, startedAt]);
 
   useEffect(() => {
-    if (secondsLeft === 0) onComplete();
+    if (secondsLeft > 0) {
+      completedRef.current = false;
+      return;
+    }
+
+    if (!completedRef.current) {
+      completedRef.current = true;
+      onComplete();
+    }
   }, [onComplete, secondsLeft]);
 
   return secondsLeft;
@@ -243,11 +248,17 @@ function useTabDetection({
   onViolation: () => void;
   disabled: boolean;
 }) {
+  const lastViolationAtRef = useRef(0);
+
   useEffect(() => {
     if (disabled) return undefined;
 
     function reportViolation() {
+      const now = Date.now();
+      if (now - lastViolationAtRef.current < 750) return;
+
       if (document.hidden || !document.hasFocus()) {
+        lastViolationAtRef.current = now;
         onViolation();
       }
     }
@@ -260,62 +271,6 @@ function useTabDetection({
       window.removeEventListener("blur", reportViolation);
     };
   }, [disabled, onViolation]);
-}
-
-function useCameraMonitoring({
-  disabled,
-  onCameraBlocked,
-}: {
-  disabled: boolean;
-  onCameraBlocked: (message: string) => void;
-}) {
-  const streamRef = useRef<MediaStream | null>(null);
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>("opening");
-
-  // callback ref — fires as soon as the <video> element mounts
-  const videoRef = useCallback((el: HTMLVideoElement | null) => {
-    if (!el || !streamRef.current) return;
-    el.srcObject = streamRef.current;
-    void el.play().catch(() => null);
-  }, []);
-
-  useEffect(() => {
-    if (disabled) return;
-    let cancelled = false;
-
-    async function openCamera() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraStatus("blocked");
-        onCameraBlocked("Camera not supported in this browser.");
-        return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: 320, height: 240 },
-          audio: false,
-        });
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
-        (window as AssessmentCameraWindow).__assessmentCameraStream = stream;
-        setCameraStatus("active");
-      } catch {
-        if (!cancelled) {
-          setCameraStatus("blocked");
-          onCameraBlocked("Camera access is required during the assessment.");
-        }
-      }
-    }
-
-    void openCamera();
-    return () => {
-      cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-      delete (window as AssessmentCameraWindow).__assessmentCameraStream;
-    };
-  }, [disabled, onCameraBlocked]);
-
-  return { cameraStatus, videoRef };
 }
 
 function ClockIcon() {
@@ -410,85 +365,12 @@ function CodeEditor({
   );
 }
 
-function CameraMonitor({
-  status,
-  videoRef,
-}: {
-  status: CameraStatus;
-  videoRef: (el: HTMLVideoElement | null) => void;
-}) {
-  const active = status === "active";
-
-  return (
-    <div className="fixed bottom-4 left-4 z-40 w-[168px] sm:w-[200px] overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-zinc-800 px-2.5 py-1.5">
-        <div className="flex items-center gap-1.5">
-          {active && (
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-            </span>
-          )}
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-300">
-            {active ? "Recording" : status === "opening" ? "Starting…" : "Camera Off"}
-          </span>
-        </div>
-        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path d="m23 7-7 5 7 5V7z" />
-          <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-        </svg>
-      </div>
-
-      {/* Video */}
-      <div className="relative aspect-video bg-zinc-950">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className={[
-            "h-full w-full object-cover [transform:scaleX(-1)]",
-            active ? "block" : "hidden",
-          ].join(" ")}
-          aria-label="Live camera feed"
-        />
-
-        {status === "opening" && (
-          <div className="flex h-full w-full items-center justify-center">
-            <svg className="h-5 w-5 animate-spin text-zinc-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
-          </div>
-        )}
-
-        {status === "blocked" && (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 px-2 text-center">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <line x1="1" y1="1" x2="23" y2="23" />
-              <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34" />
-            </svg>
-            <p className="text-[10px] leading-tight text-red-400">Camera access denied</p>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="bg-zinc-800 px-2.5 py-1.5">
-        <p className="text-center text-[10px] leading-tight text-zinc-500">
-          Monitored for exam integrity
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export default function AssessmentPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedLanguage] = useState<Language>(getCandidateLanguage);
   const [toast, setToast] = useState("");
   const [, setViolations] = useState(0);
+  const violationsRef = useRef(0);
   const [submitted, setSubmitted] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
@@ -514,11 +396,6 @@ export default function AssessmentPage() {
     setToast(message);
   }, []);
 
-  const { cameraStatus, videoRef } = useCameraMonitoring({
-    disabled: submitted,
-    onCameraBlocked: handleCameraBlocked,
-  });
-
   const secondsLeft = useTimer({
     initialSeconds: TOTAL_SECONDS,
     paused: submitted,
@@ -526,12 +403,12 @@ export default function AssessmentPage() {
   });
 
   const handleViolation = useCallback(() => {
-    setViolations((current) => {
-      const next = current + 1;
-      setToast(`Tab switch warning ${next}/${MAX_TAB_VIOLATIONS}. Please stay on the assessment page.`);
-      if (next >= MAX_TAB_VIOLATIONS) submitAssessment("integrity");
-      return next;
-    });
+    const next = violationsRef.current + 1;
+    violationsRef.current = next;
+
+    setViolations(next);
+    setToast(`Tab switch warning ${next}/${MAX_TAB_VIOLATIONS}. Please stay on the assessment page.`);
+    if (next >= MAX_TAB_VIOLATIONS) submitAssessment("integrity");
   }, [submitAssessment]);
 
   useTabDetection({ onViolation: handleViolation, disabled: submitted });
@@ -570,7 +447,11 @@ export default function AssessmentPage() {
       />
 
       <Toast message={toast} tone={submitted ? "danger" : "warning"} />
-      <CameraMonitor status={cameraStatus} videoRef={videoRef} />
+      <CameraMonitor
+        className="bottom-4 left-4 z-40"
+        disabled={submitted}
+        onCameraBlocked={handleCameraBlocked}
+      />
 
       <div className="border-b border-zinc-200 px-4 py-3 text-sm text-slate-600 sm:hidden">
         {assessmentTitle}

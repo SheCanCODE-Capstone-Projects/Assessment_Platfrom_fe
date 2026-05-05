@@ -1,10 +1,20 @@
 import { useCameraMonitor } from "@/src/hooks/useCameraMonitor";
 
-export default function CameraMonitor() {
-  const { status, attachVideo } = useCameraMonitor();
+type Props = {
+  className?: string;
+  disabled?: boolean;
+  onCameraBlocked?: (message: string) => void;
+};
+
+export default function CameraMonitor({
+  className = "bottom-4 right-4 z-50",
+  disabled = false,
+  onCameraBlocked,
+}: Props) {
+  const { status, attachVideo } = useCameraMonitor({ disabled, onCameraBlocked });
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl w-[168px] sm:w-[200px]">
+    <div className={`fixed ${className} flex flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl w-[168px] sm:w-[200px]`}>
       {/* Header */}
       <div className="flex items-center justify-between px-2.5 py-1.5 bg-zinc-800">
         <div className="flex items-center gap-1.5">
