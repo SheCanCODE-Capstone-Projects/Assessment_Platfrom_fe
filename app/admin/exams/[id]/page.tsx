@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import CreateExamModal, { type CreateExamPayload } from "@/components/modals/CreateExamModal";
+import { QUESTION_BANK, type QuestionBankItem } from "@/components/modals/AssignQuestionModal";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
 
@@ -15,6 +16,19 @@ type Question = {
   description: string;
   
 };
+
+const mapBankQuestionToExamQuestion = (question: QuestionBankItem): Question => ({
+  id: question.id,
+  title: question.title,
+  difficulty:
+    question.difficulty === "EASY"
+      ? "Easy"
+      : question.difficulty === "MEDIUM"
+        ? "Medium"
+        : "Hard",
+  marks: question.marks,
+  description: question.description,
+});
 
 type Exam = {
   id: string;
@@ -103,6 +117,19 @@ function TargetIcon() {
   );
 }
 
+function MarksIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="m3 6 1 1 2-2" />
+      <path d="m3 12 1 1 2-2" />
+      <path d="m3 18 1 1 2-2" />
+    </svg>
+  );
+}
+
 function CopyIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -168,6 +195,10 @@ export default function ExamDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
 
   const handleUpdateExam = (payload: CreateExamPayload) => {
+    const selectedQuestions = payload.selectedQuestionIds
+      ? QUESTION_BANK.filter((question) => payload.selectedQuestionIds?.includes(question.id))
+      : null;
+
     setExam((prev) => ({
       ...prev,
       title: payload.examTitle,
@@ -176,6 +207,12 @@ export default function ExamDetailPage() {
       timeUnit: payload.timeUnit,
       passMark: payload.passMark,
       status: payload.status,
+      questions: selectedQuestions
+        ? selectedQuestions.map(mapBankQuestionToExamQuestion)
+        : prev.questions,
+      totalMarks: selectedQuestions
+        ? selectedQuestions.reduce((total, question) => total + question.marks, 0)
+        : prev.totalMarks,
     }));
   };
 
@@ -206,13 +243,6 @@ export default function ExamDetailPage() {
               <div className="text-xs text-zinc-500">Exam Details</div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setEditOpen(true)}
-            className="inline-flex h-9 items-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
-          >
-            Edit Exam
-          </button>
         </div>
       </div>
 
@@ -220,8 +250,19 @@ export default function ExamDetailPage() {
 
         {/* Overview */}
         <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-          <h1 className="text-lg font-semibold text-zinc-900">{exam.title}</h1>
-          <p className="mt-1 text-sm leading-6 text-zinc-500">{exam.description}</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-lg font-semibold text-zinc-900">{exam.title}</h1>
+              <p className="mt-1 text-sm leading-6 text-zinc-500">{exam.description}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
+            >
+              Edit Exam
+            </button>
+          </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
             <StatPill icon={<ClockIcon />} label={`${exam.duration} ${timeUnitLabel}`} />
@@ -231,7 +272,7 @@ export default function ExamDetailPage() {
               label={`${exam.questions.length} Questions`}
             />
             <StatPill
-              icon={<svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>}
+              icon={<MarksIcon />}
               label={`${exam.totalMarks} Total Marks`}
             />
           </div>
@@ -301,6 +342,7 @@ export default function ExamDetailPage() {
           passMark: exam.passMark,
           status: exam.status,
         }}
+        initialSelectedQuestionIds={exam.questions.map((question) => question.id)}
       />
     </div>
   );

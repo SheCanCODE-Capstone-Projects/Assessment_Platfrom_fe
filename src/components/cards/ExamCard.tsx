@@ -52,8 +52,12 @@ function QuestionIcon() {
 function MarksIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 2v20" />
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" />
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="m3 6 1 1 2-2" />
+      <path d="m3 12 1 1 2-2" />
+      <path d="m3 18 1 1 2-2" />
     </svg>
   );
 }
@@ -98,7 +102,7 @@ function PlusCircleIcon() {
 function StatusBadge({ status }: { status: ExamStatus }) {
   const styles =
     status === "ACTIVE"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      ? "border-emerald-500 bg-emerald-500 text-white"
       : "border-zinc-200 bg-zinc-100 text-zinc-600";
 
   return (

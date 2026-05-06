@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { greenSelectClassName, greenSelectOptionClassName } from "@/components/ui/selectStyles";
 
 export type QuestionDifficulty = "EASY" | "MEDIUM" | "HARD";
 export type QuestionLanguage = "JAVASCRIPT" | "TYPESCRIPT" | "PYTHON" | "JAVA" | "CPP";
@@ -27,7 +28,7 @@ type AssignQuestionModalProps = {
   onAssign?: (payload: AssignQuestionPayload) => void;
 };
 
-const QUESTION_BANK: QuestionBankItem[] = [
+export const QUESTION_BANK: QuestionBankItem[] = [
   {
     id: "q1",
     title: "Two Sum",
@@ -84,13 +85,13 @@ const QUESTION_BANK: QuestionBankItem[] = [
   },
 ];
 
-const difficultyLabels: Record<QuestionDifficulty, string> = {
+export const difficultyLabels: Record<QuestionDifficulty, string> = {
   EASY: "Easy",
   MEDIUM: "Medium",
   HARD: "Hard",
 };
 
-const languageLabels: Record<QuestionLanguage, string> = {
+export const languageLabels: Record<QuestionLanguage, string> = {
   JAVASCRIPT: "JavaScript",
   TYPESCRIPT: "TypeScript",
   PYTHON: "Python",
@@ -98,7 +99,7 @@ const languageLabels: Record<QuestionLanguage, string> = {
   CPP: "C++",
 };
 
-const difficultyStyles: Record<QuestionDifficulty, string> = {
+export const difficultyStyles: Record<QuestionDifficulty, string> = {
   EASY: "border-emerald-200 bg-emerald-50 text-emerald-700",
   MEDIUM: "border-orange-200 bg-orange-50 text-orange-700",
   HARD: "border-red-200 bg-red-50 text-red-700",
@@ -133,8 +134,10 @@ function AssignQuestionModalContent({
   const [difficulty, setDifficulty] = useState<"all" | QuestionDifficulty>("all");
   const [language, setLanguage] = useState<"all" | QuestionLanguage>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const assignedIds = useMemo(() => new Set(assignedQuestionIds), [assignedQuestionIds]);
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const expandedIdSet = useMemo(() => new Set(expandedIds), [expandedIds]);
 
   const filteredQuestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -159,6 +162,14 @@ function AssignQuestionModalContent({
     if (assignedIds.has(questionId)) return;
 
     setSelectedIds((prev) =>
+      prev.includes(questionId)
+        ? prev.filter((id) => id !== questionId)
+        : [...prev, questionId]
+    );
+  };
+
+  const toggleExpanded = (questionId: string) => {
+    setExpandedIds((prev) =>
       prev.includes(questionId)
         ? prev.filter((id) => id !== questionId)
         : [...prev, questionId]
@@ -215,12 +226,12 @@ function AssignQuestionModalContent({
               <select
                 value={difficulty}
                 onChange={(event) => setDifficulty(event.target.value as "all" | QuestionDifficulty)}
-                className="mt-1.5 h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
+                className={`mt-1.5 h-10 w-full px-3 ${greenSelectClassName}`}
               >
-                <option value="all">All</option>
-                <option value="EASY">Easy</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HARD">Hard</option>
+                <option className={greenSelectOptionClassName} value="all">All</option>
+                <option className={greenSelectOptionClassName} value="EASY">Easy</option>
+                <option className={greenSelectOptionClassName} value="MEDIUM">Medium</option>
+                <option className={greenSelectOptionClassName} value="HARD">Hard</option>
               </select>
             </label>
 
@@ -229,14 +240,14 @@ function AssignQuestionModalContent({
               <select
                 value={language}
                 onChange={(event) => setLanguage(event.target.value as "all" | QuestionLanguage)}
-                className="mt-1.5 h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
+                className={`mt-1.5 h-10 w-full px-3 ${greenSelectClassName}`}
               >
-                <option value="all">All</option>
-                <option value="JAVASCRIPT">JavaScript</option>
-                <option value="TYPESCRIPT">TypeScript</option>
-                <option value="PYTHON">Python</option>
-                <option value="JAVA">Java</option>
-                <option value="CPP">C++</option>
+                <option className={greenSelectOptionClassName} value="all">All</option>
+                <option className={greenSelectOptionClassName} value="JAVASCRIPT">JavaScript</option>
+                <option className={greenSelectOptionClassName} value="TYPESCRIPT">TypeScript</option>
+                <option className={greenSelectOptionClassName} value="PYTHON">Python</option>
+                <option className={greenSelectOptionClassName} value="JAVA">Java</option>
+                <option className={greenSelectOptionClassName} value="CPP">C++</option>
               </select>
             </label>
           </div>
@@ -252,45 +263,82 @@ function AssignQuestionModalContent({
             {filteredQuestions.map((question) => {
               const isAssigned = assignedIds.has(question.id);
               const isSelected = selectedIdSet.has(question.id);
+              const isExpanded = expandedIdSet.has(question.id);
 
               return (
-                <label
+                <article
                   key={question.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                  onClick={() => toggleExpanded(question.id)}
+                  className={`cursor-pointer rounded-lg border p-4 transition-colors ${
                     isSelected
                       ? "border-orange-300 bg-orange-50"
                       : "border-zinc-200 bg-white hover:border-zinc-300"
-                  } ${isAssigned ? "cursor-not-allowed opacity-60" : ""}`}
+                  } ${isAssigned ? "opacity-70" : ""}`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={isAssigned || isSelected}
-                    disabled={isAssigned}
-                    onChange={() => toggleQuestion(question.id)}
-                    className="mt-1 h-4 w-4 rounded border-zinc-300 text-orange-500 focus:ring-orange-400"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-semibold text-zinc-900">{question.title}</h3>
-                      <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${difficultyStyles[question.difficulty]}`}>
-                        {difficultyLabels[question.difficulty]}
-                      </span>
-                      <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                        {languageLabels[question.language]}
-                      </span>
-                      {isAssigned && (
-                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                          Assigned
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={isAssigned || isSelected}
+                      disabled={isAssigned}
+                      onClick={(event) => event.stopPropagation()}
+                      onChange={() => toggleQuestion(question.id)}
+                      className="mt-1 h-4 w-4 rounded border-zinc-300 text-orange-500 focus:ring-orange-400 disabled:cursor-not-allowed"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold text-zinc-900">{question.title}</h3>
+                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${difficultyStyles[question.difficulty]}`}>
+                          {difficultyLabels[question.difficulty]}
                         </span>
-                      )}
+                        <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                          {languageLabels[question.language]}
+                        </span>
+                        {isAssigned && (
+                          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                            Assigned
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm leading-5 text-zinc-500">{question.description}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+                        <span>{question.topic}</span>
+                        <span>{question.marks} marks</span>
+                        <span>{isExpanded ? "Click to collapse" : "Click to preview"}</span>
+                      </div>
                     </div>
-                    <p className="mt-1 text-sm leading-5 text-zinc-500">{question.description}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-                      <span>{question.topic}</span>
-                      <span>{question.marks} marks</span>
-                    </div>
+                    <span
+                      aria-hidden="true"
+                      className={`mt-1 text-zinc-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                    >
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </span>
                   </div>
-                </label>
+
+                  {isExpanded && (
+                    <div className="mt-4 rounded-md border border-zinc-200 bg-white px-4 py-3">
+                      <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+                        <div>
+                          <div className="text-[11px] font-medium uppercase text-zinc-400">Topic</div>
+                          <div className="mt-1 font-medium text-zinc-800">{question.topic}</div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-medium uppercase text-zinc-400">Language</div>
+                          <div className="mt-1 font-medium text-zinc-800">{languageLabels[question.language]}</div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-medium uppercase text-zinc-400">Marks</div>
+                          <div className="mt-1 font-medium text-zinc-800">{question.marks}</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 border-t border-zinc-100 pt-3">
+                        <div className="text-[11px] font-medium uppercase text-zinc-400">Question Preview</div>
+                        <p className="mt-1 text-sm leading-6 text-zinc-600">{question.description}</p>
+                      </div>
+                    </div>
+                  )}
+                </article>
               );
             })}
 

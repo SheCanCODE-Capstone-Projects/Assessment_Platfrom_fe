@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ExamCard, { type ExamCardData, type ExamStatus } from "@/components/cards/ExamCard";
 import CreateExamModal, { type CreateExamPayload } from "@/components/modals/CreateExamModal";
-import AssignQuestionModal, { type AssignQuestionPayload } from "@/components/modals/AssignQuestionModal";
+import AssignQuestionModal, {
+  QUESTION_BANK,
+  type AssignQuestionPayload,
+} from "@/components/modals/AssignQuestionModal";
 import Footer from "@/components/layout/Footer";
+import { greenSelectClassName, greenSelectOptionClassName } from "@/components/ui/selectStyles";
 
 type StatusFilter = "all" | ExamStatus;
 type ConfirmAction =
@@ -140,6 +144,30 @@ const INITIAL_EXAM_QUESTION_IDS: Record<string, string[]> = {
 };
 
 const PAGE_SIZE = 4;
+const EXAMS_STORAGE_KEY = "assessment-platform.admin.exams";
+const EXAM_QUESTION_IDS_STORAGE_KEY = "assessment-platform.admin.examQuestionIds";
+
+function readStoredExams() {
+  try {
+    const storedExams = window.localStorage.getItem(EXAMS_STORAGE_KEY);
+    const storedQuestionIds = window.localStorage.getItem(EXAM_QUESTION_IDS_STORAGE_KEY);
+    const parsedExams = storedExams ? JSON.parse(storedExams) : null;
+    const parsedQuestionIds = storedQuestionIds ? JSON.parse(storedQuestionIds) : null;
+
+    return {
+      exams: Array.isArray(parsedExams) ? (parsedExams as ExamCardData[]) : INITIAL_EXAMS,
+      examQuestionIds:
+        parsedQuestionIds && typeof parsedQuestionIds === "object" && !Array.isArray(parsedQuestionIds)
+          ? (parsedQuestionIds as Record<string, string[]>)
+          : INITIAL_EXAM_QUESTION_IDS,
+    };
+  } catch {
+    return {
+      exams: INITIAL_EXAMS,
+      examQuestionIds: INITIAL_EXAM_QUESTION_IDS,
+    };
+  }
+}
 
 export default function ExamManagementPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -151,6 +179,22 @@ export default function ExamManagementPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [storageReady, setStorageReady] = useState(false);
+
+  useEffect(() => {
+    const storedState = readStoredExams();
+
+    setExams(storedState.exams);
+    setExamQuestionIds(storedState.examQuestionIds);
+    setStorageReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) return;
+
+    window.localStorage.setItem(EXAMS_STORAGE_KEY, JSON.stringify(exams));
+    window.localStorage.setItem(EXAM_QUESTION_IDS_STORAGE_KEY, JSON.stringify(examQuestionIds));
+  }, [examQuestionIds, exams, storageReady]);
 
   const filteredExams = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -183,6 +227,10 @@ export default function ExamManagementPage() {
 
   const handleCreateExam = (payload: CreateExamPayload) => {
     const id = String(Date.now());
+    const selectedQuestionIds = payload.selectedQuestionIds ?? [];
+    const selectedQuestions = QUESTION_BANK.filter((question) =>
+      selectedQuestionIds.includes(question.id)
+    );
 
     setExams((prev) => [
       {
@@ -192,19 +240,26 @@ export default function ExamManagementPage() {
         duration: payload.timeValue,
         timeUnit: payload.timeUnit,
         passMark: payload.passMark,
-        questions: 0,
-        totalMarks: 0,
+        questions: selectedQuestions.length,
+        totalMarks: selectedQuestions.reduce((total, question) => total + question.marks, 0),
         link: `https://codeassess.com/exam/${id}`,
         status: payload.status,
       },
       ...prev,
     ]);
+    setExamQuestionIds((prev) => ({
+      ...prev,
+      [id]: selectedQuestionIds,
+    }));
     setStatusFilter("all");
     setPage(1);
   };
 
   const handleUpdateExam = (payload: CreateExamPayload) => {
     if (!editingExamId) return;
+    const selectedQuestions = payload.selectedQuestionIds
+      ? QUESTION_BANK.filter((question) => payload.selectedQuestionIds?.includes(question.id))
+      : null;
 
     setExams((prev) =>
       prev.map((exam) =>
@@ -217,10 +272,20 @@ export default function ExamManagementPage() {
               timeUnit: payload.timeUnit,
               passMark: payload.passMark,
               status: payload.status,
+              questions: selectedQuestions ? selectedQuestions.length : exam.questions,
+              totalMarks: selectedQuestions
+                ? selectedQuestions.reduce((total, question) => total + question.marks, 0)
+                : exam.totalMarks,
             }
           : exam
       )
     );
+    if (payload.selectedQuestionIds) {
+      setExamQuestionIds((prev) => ({
+        ...prev,
+        [editingExamId]: payload.selectedQuestionIds ?? [],
+      }));
+    }
     setEditingExamId(null);
   };
 
@@ -304,7 +369,7 @@ export default function ExamManagementPage() {
               </div>
               <div>
                 <div className="text-xs text-zinc-500">Active</div>
-                <div className="mt-1 font-semibold text-emerald-700">{activeCount}</div>
+                <div className="mt-1 font-semibold text-emerald-500">{activeCount}</div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500">Inactive</div>
@@ -318,34 +383,13 @@ export default function ExamManagementPage() {
                 <select
                   value={statusFilter}
                   onChange={(event) => changeStatusFilter(event.target.value as StatusFilter)}
-                  className="h-9 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
+                  className={`h-9 px-3 ${greenSelectClassName}`}
                 >
-                  <option value="all">All status</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
+                  <option className={greenSelectOptionClassName} value="all">All status</option>
+                  <option className={greenSelectOptionClassName} value="ACTIVE">Active</option>
+                  <option className={greenSelectOptionClassName} value="INACTIVE">Inactive</option>
                 </select>
               </label>
-
-              <div className="inline-flex rounded-md border border-zinc-200 bg-zinc-50 p-1">
-                <button
-                  type="button"
-                  onClick={() => changeStatusFilter("ACTIVE")}
-                  className={`h-8 rounded px-3 text-sm font-medium transition-colors ${
-                    statusFilter === "ACTIVE" ? "bg-white text-emerald-700 shadow-sm" : "text-zinc-600 hover:text-zinc-900"
-                  }`}
-                >
-                  Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => changeStatusFilter("INACTIVE")}
-                  className={`h-8 rounded px-3 text-sm font-medium transition-colors ${
-                    statusFilter === "INACTIVE" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600 hover:text-zinc-900"
-                  }`}
-                >
-                  Inactive
-                </button>
-              </div>
             </div>
           </div>
         </section>
@@ -466,6 +510,9 @@ export default function ExamManagementPage() {
                 status: editingExam.status,
               }
             : undefined
+        }
+        initialSelectedQuestionIds={
+          editingExam?.id ? examQuestionIds[editingExam.id] ?? [] : []
         }
       />
 
