@@ -1,39 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/src/components/ui/Button";
 
-type Difficulty = "Easy" | "Medium" | "Hard";
+type Difficulty = "EASY" | "MEDIUM" | "HARD";
+type DifficultyFilter = "ALL" | Difficulty;
+type Language =
+  | "JAVASCRIPT"
+  | "TYPESCRIPT"
+  | "PYTHON"
+  | "JAVA"
+  | "CPLUSPLUS"
+  | "GO"
+  | "CSHARP"
+  | "KOTLIN"
+  | "RUST"
+  | "SWIFT"
+  | "RUBY"
+  | "PHP";
 
 type Question = {
   id: number;
   title: string;
-  difficulty: Difficulty;
   description: string;
   marks: number;
-  language: string;
-  testCases: number;
+  difficulty: Difficulty;
+  language: Language;
+  starterCode: string;
 };
 
 type QuestionFormValues = {
   title: string;
-  difficulty: Difficulty;
   description: string;
   marks: string;
-  language: string;
-  testCases: string;
+  difficulty: Difficulty;
+  language: Language;
+  starterCode: string;
 };
 
 type QuestionBankHeaderProps = {
-  questionCount: number;
-  onAddQuestion: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onAddQuestion: () => void;
 };
 
 type QuestionCardProps = {
   question: Question;
+  onViewDetails: (question: Question) => void;
   onEdit: (question: Question) => void;
   onDelete: (questionId: number) => void;
 };
@@ -51,417 +65,263 @@ type DeleteQuestionModalProps = {
   onConfirm: () => void;
 };
 
+type QuestionDetailsModalProps = {
+  question: Question;
+  onClose: () => void;
+};
+
 const initialQuestions: Question[] = [
   {
     id: 1,
     title: "Two Sum",
-    difficulty: "Easy",
-    description:
-      "Given an array of integers and a target value, return the indices of the two numbers whose sum equals the target while preserving the most efficient approach possible.",
+    description: "Find two array values that add up to the target.",
     marks: 20,
-    language: "JavaScript",
-    testCases: 8,
+    difficulty: "EASY",
+    language: "JAVASCRIPT",
+    starterCode:
+      "function twoSum(nums, target) {\n  // return the indices here\n}",
   },
   {
     id: 2,
     title: "Valid Parentheses",
-    difficulty: "Medium",
-    description:
-      "Determine whether a string containing brackets is valid by ensuring every opening bracket is closed in the correct order using a stack-based solution.",
+    description: "Check if every bracket opens and closes in the right order.",
     marks: 25,
-    language: "Java",
-    testCases: 10,
+    difficulty: "MEDIUM",
+    language: "JAVA",
+    starterCode:
+      "public boolean isValid(String s) {\n    // write your logic here\n}",
   },
   {
     id: 3,
     title: "Merge K Sorted Lists",
-    difficulty: "Hard",
-    description:
-      "Merge multiple sorted linked lists into one sorted list using a strategy that scales well as the number of lists grows.",
+    description: "Merge many sorted linked lists into one sorted list.",
     marks: 45,
-    language: "Java",
-    testCases: 12,
+    difficulty: "HARD",
+    language: "JAVA",
+    starterCode:
+      "public ListNode mergeKLists(ListNode[] lists) {\n    // solve here\n}",
   },
   {
     id: 4,
     title: "Reverse String",
-    difficulty: "Easy",
-    description:
-      "Write a function that reverses a string without relying on built-in reverse helpers, and make sure the solution handles whitespace and punctuation correctly.",
+    description: "Reverse a string without using built-in reverse helpers.",
     marks: 15,
-    language: "Python",
-    testCases: 6,
+    difficulty: "EASY",
+    language: "PYTHON",
+    starterCode: "def reverse_string(value):\n    # return reversed string\n    pass",
   },
   {
     id: 5,
-    title: "Longest Substring Without Repeating Characters",
-    difficulty: "Medium",
-    description:
-      "Find the length of the longest substring without duplicate characters using an optimized sliding window approach.",
+    title: "Longest Substring",
+    description: "Return the longest substring with no repeated characters.",
     marks: 30,
-    language: "JavaScript",
-    testCases: 11,
+    difficulty: "MEDIUM",
+    language: "JAVASCRIPT",
+    starterCode:
+      "function lengthOfLongestSubstring(text) {\n  // solve here\n}",
   },
   {
     id: 6,
     title: "Median of Two Sorted Arrays",
-    difficulty: "Hard",
-    description:
-      "Find the median of two sorted arrays with logarithmic complexity rather than merging the arrays directly.",
+    description: "Find the median of two sorted arrays efficiently.",
     marks: 50,
-    language: "C++",
-    testCases: 13,
+    difficulty: "HARD",
+    language: "CPLUSPLUS",
+    starterCode:
+      "double findMedianSortedArrays(vector<int>& a, vector<int>& b) {\n  // solve here\n}",
   },
   {
     id: 7,
     title: "Palindrome Number",
-    difficulty: "Easy",
-    description:
-      "Determine whether an integer reads the same forward and backward without converting the number to a string.",
+    description: "Decide if an integer reads the same forward and backward.",
     marks: 14,
-    language: "C#",
-    testCases: 6,
+    difficulty: "EASY",
+    language: "CSHARP",
+    starterCode:
+      "public bool IsPalindrome(int x) {\n    // solve here\n}",
   },
   {
     id: 8,
-    title: "Product of Array Except Self",
-    difficulty: "Medium",
-    description:
-      "Return an array where each element is the product of all other values without using division and with linear time complexity.",
+    title: "Product Except Self",
+    description: "Build an output array without using division.",
     marks: 28,
-    language: "Java",
-    testCases: 9,
+    difficulty: "MEDIUM",
+    language: "JAVA",
+    starterCode:
+      "public int[] productExceptSelf(int[] nums) {\n    // solve here\n}",
   },
   {
     id: 9,
     title: "Trapping Rain Water",
-    difficulty: "Hard",
-    description:
-      "Calculate how much rain water can be trapped between elevation bars using an optimized linear-time approach.",
+    description: "Calculate how much water can stay between bars.",
     marks: 44,
-    language: "Python",
-    testCases: 11,
+    difficulty: "HARD",
+    language: "PYTHON",
+    starterCode: "def trap(height):\n    # solve here\n    pass",
   },
   {
     id: 10,
-    title: "Merge Sorted Arrays",
-    difficulty: "Easy",
-    description:
-      "Combine two sorted arrays into one sorted result while preserving duplicate values and keeping time complexity efficient.",
-    marks: 18,
-    language: "TypeScript",
-    testCases: 7,
+    title: "Binary Search",
+    description: "Find the target index in a sorted array.",
+    marks: 20,
+    difficulty: "EASY",
+    language: "TYPESCRIPT",
+    starterCode:
+      "function search(nums: number[], target: number): number {\n  // solve here\n}",
   },
   {
     id: 11,
     title: "Top K Frequent Elements",
-    difficulty: "Medium",
-    description:
-      "Return the k most frequent elements from an array while keeping the solution more efficient than full sorting.",
+    description: "Return the most frequent values from an array.",
     marks: 32,
-    language: "Go",
-    testCases: 10,
+    difficulty: "MEDIUM",
+    language: "GO",
+    starterCode:
+      "func topKFrequent(nums []int, k int) []int {\n    // solve here\n}",
   },
   {
     id: 12,
     title: "Word Ladder",
-    difficulty: "Hard",
-    description:
-      "Find the shortest transformation sequence between two words where only one character can change at a time.",
+    description: "Find the shortest word transformation sequence.",
     marks: 46,
-    language: "TypeScript",
-    testCases: 12,
+    difficulty: "HARD",
+    language: "TYPESCRIPT",
+    starterCode:
+      "function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {\n  // solve here\n}",
   },
   {
     id: 13,
-    title: "Binary Search",
-    difficulty: "Easy",
-    description:
-      "Implement binary search for a sorted array and return the target index or -1 when the value does not exist.",
-    marks: 20,
-    language: "C++",
-    testCases: 8,
+    title: "Contains Duplicate",
+    description: "Check if an array contains any repeated value.",
+    marks: 12,
+    difficulty: "EASY",
+    language: "JAVA",
+    starterCode:
+      "public boolean containsDuplicate(int[] nums) {\n    // solve here\n}",
   },
   {
     id: 14,
     title: "Group Anagrams",
-    difficulty: "Medium",
-    description:
-      "Group words that are anagrams of one another and return them in a structure that keeps related words together.",
+    description: "Group words that share the same sorted letters.",
     marks: 26,
-    language: "Kotlin",
-    testCases: 8,
+    difficulty: "MEDIUM",
+    language: "KOTLIN",
+    starterCode:
+      "fun groupAnagrams(strs: Array<String>): List<List<String>> {\n    // solve here\n}",
   },
   {
     id: 15,
-    title: "Serialize and Deserialize Binary Tree",
-    difficulty: "Hard",
-    description:
-      "Design matching serialization and deserialization functions that preserve the full structure of a binary tree.",
-    marks: 48,
-    language: "Go",
-    testCases: 12,
+    title: "Sudoku Solver",
+    description: "Fill the board by trying only valid number choices.",
+    marks: 55,
+    difficulty: "HARD",
+    language: "RUST",
+    starterCode:
+      "fn solve_sudoku(board: &mut Vec<Vec<char>>) {\n    // solve here\n}",
   },
   {
     id: 16,
-    title: "FizzBuzz Variant",
-    difficulty: "Easy",
-    description:
-      "Generate the classic FizzBuzz sequence with a small rule extension and format the result exactly as required.",
-    marks: 10,
-    language: "Python",
-    testCases: 5,
+    title: "Roman to Integer",
+    description: "Convert a Roman numeral string into a number.",
+    marks: 17,
+    difficulty: "EASY",
+    language: "GO",
+    starterCode:
+      "func romanToInt(s string) int {\n    // solve here\n}",
   },
   {
     id: 17,
     title: "Coin Change",
-    difficulty: "Medium",
-    description:
-      "Compute the minimum number of coins needed to make a target amount, or report that it is impossible.",
+    description: "Find the fewest coins needed for a target amount.",
     marks: 34,
-    language: "Python",
-    testCases: 11,
+    difficulty: "MEDIUM",
+    language: "PYTHON",
+    starterCode: "def coin_change(coins, amount):\n    # solve here\n    pass",
   },
   {
     id: 18,
     title: "N-Queens",
-    difficulty: "Hard",
-    description:
-      "Place queens on a chessboard so none attack one another, and return every valid board configuration.",
+    description: "Return all valid ways to place queens on the board.",
     marks: 47,
-    language: "JavaScript",
-    testCases: 11,
+    difficulty: "HARD",
+    language: "JAVASCRIPT",
+    starterCode:
+      "function solveNQueens(n) {\n  // solve here\n}",
   },
   {
     id: 19,
     title: "Climbing Stairs",
-    difficulty: "Easy",
-    description:
-      "Calculate the number of distinct ways to reach the top of a staircase when you can climb one or two steps at a time.",
+    description: "Count the total ways to reach the top.",
     marks: 16,
-    language: "Ruby",
-    testCases: 6,
+    difficulty: "EASY",
+    language: "RUBY",
+    starterCode:
+      "def climb_stairs(n)\n  # solve here\nend",
   },
   {
     id: 20,
-    title: "Container With Most Water",
-    difficulty: "Medium",
-    description:
-      "Choose two heights that form the container with the largest area using a two-pointer strategy.",
-    marks: 29,
-    language: "C++",
-    testCases: 9,
-  },
-  {
-    id: 21,
-    title: "Minimum Window Substring",
-    difficulty: "Hard",
-    description:
-      "Return the smallest substring of a source string that contains every character from a target string.",
-    marks: 49,
-    language: "Kotlin",
-    testCases: 12,
-  },
-  {
-    id: 22,
-    title: "Contains Duplicate",
-    difficulty: "Easy",
-    description:
-      "Check whether any value appears at least twice in an array and return the result with a clean, efficient implementation.",
-    marks: 12,
-    language: "Java",
-    testCases: 6,
-  },
-  {
-    id: 23,
-    title: "Search in Rotated Sorted Array",
-    difficulty: "Medium",
-    description:
-      "Locate a target in a rotated sorted array in logarithmic time without first restoring the original ordering.",
-    marks: 31,
-    language: "TypeScript",
-    testCases: 10,
-  },
-  {
-    id: 24,
-    title: "Alien Dictionary",
-    difficulty: "Hard",
-    description:
-      "Infer the ordering of characters in an unknown alphabet from a sorted list of words using graph logic.",
-    marks: 43,
-    language: "Swift",
-    testCases: 10,
-  },
-  {
-    id: 25,
-    title: "Roman to Integer",
-    difficulty: "Easy",
-    description:
-      "Convert a Roman numeral string into its integer value while correctly handling subtractive notation cases.",
-    marks: 17,
-    language: "Go",
-    testCases: 7,
-  },
-  {
-    id: 26,
     title: "Spiral Matrix",
-    difficulty: "Medium",
-    description:
-      "Return all values from a matrix in spiral order while carefully managing boundaries after each traversal.",
+    description: "Return matrix values in spiral order.",
     marks: 27,
-    language: "C#",
-    testCases: 8,
-  },
-  {
-    id: 27,
-    title: "Regular Expression Matching",
-    difficulty: "Hard",
-    description:
-      "Implement pattern matching for strings with dot and star operators while respecting full-string matching rules.",
-    marks: 52,
-    language: "C#",
-    testCases: 14,
-  },
-  {
-    id: 28,
-    title: "Maximum Subarray",
-    difficulty: "Easy",
-    description:
-      "Find the contiguous subarray with the largest sum and explain the time-efficient dynamic programming approach used.",
-    marks: 22,
-    language: "Kotlin",
-    testCases: 8,
-  },
-  {
-    id: 29,
-    title: "Longest Consecutive Sequence",
-    difficulty: "Medium",
-    description:
-      "Find the length of the longest run of consecutive integers in an unsorted array with linear-time complexity.",
-    marks: 33,
-    language: "Rust",
-    testCases: 10,
-  },
-  {
-    id: 30,
-    title: "Sudoku Solver",
-    difficulty: "Hard",
-    description:
-      "Fill a partially completed Sudoku board by exploring valid candidates and pruning impossible states quickly.",
-    marks: 55,
-    language: "Rust",
-    testCases: 13,
-  },
-  {
-    id: 31,
-    title: "Pascal Triangle",
-    difficulty: "Easy",
-    description:
-      "Generate the first numRows of Pascal triangle with correctly nested arrays and predictable output formatting.",
-    marks: 13,
-    language: "Swift",
-    testCases: 5,
-  },
-  {
-    id: 32,
-    title: "Set Matrix Zeroes",
-    difficulty: "Medium",
-    description:
-      "Modify a matrix so that rows and columns become zero whenever a zero appears, with minimal extra space.",
-    marks: 30,
-    language: "JavaScript",
-    testCases: 9,
-  },
-  {
-    id: 33,
-    title: "Distinct Subsequences",
-    difficulty: "Hard",
-    description:
-      "Count how many distinct subsequences of one string equal another string using dynamic programming.",
-    marks: 46,
-    language: "PHP",
-    testCases: 11,
-  },
-  {
-    id: 34,
-    title: "Valid Anagram",
-    difficulty: "Easy",
-    description:
-      "Determine whether two strings are anagrams of each other while handling repeated characters accurately.",
-    marks: 12,
-    language: "PHP",
-    testCases: 6,
-  },
-  {
-    id: 35,
-    title: "Decode Ways",
-    difficulty: "Medium",
-    description:
-      "Count the number of valid decodings for a digit string using dynamic programming and careful handling of zeros.",
-    marks: 32,
-    language: "Ruby",
-    testCases: 10,
-  },
-  {
-    id: 36,
-    title: "Text Justification",
-    difficulty: "Hard",
-    description:
-      "Format text so each line has the required width and spacing rules, including left justification for the last line.",
-    marks: 42,
-    language: "Ruby",
-    testCases: 10,
-  },
-  {
-    id: 37,
-    title: "Maximum Depth of Binary Tree",
-    difficulty: "Easy",
-    description:
-      "Compute the maximum depth of a binary tree using either recursive or iterative traversal correctly.",
-    marks: 15,
-    language: "Go",
-    testCases: 6,
-  },
-  {
-    id: 38,
-    title: "Number of Islands",
-    difficulty: "Medium",
-    description:
-      "Count the number of islands in a grid by exploring connected land cells without recounting visited positions.",
-    marks: 31,
-    language: "Java",
-    testCases: 10,
-  },
-  {
-    id: 39,
-    title: "Course Schedule III",
-    difficulty: "Hard",
-    description:
-      "Choose the maximum number of courses that can be completed before their deadlines using a greedy strategy.",
-    marks: 45,
-    language: "Java",
-    testCases: 11,
-  },
-  {
-    id: 40,
-    title: "Linked List Cycle",
-    difficulty: "Easy",
-    description:
-      "Detect whether a linked list contains a cycle using a space-efficient pointer technique.",
-    marks: 14,
-    language: "TypeScript",
-    testCases: 6,
+    difficulty: "MEDIUM",
+    language: "CSHARP",
+    starterCode:
+      "public IList<int> SpiralOrder(int[][] matrix) {\n    // solve here\n}",
   },
 ];
 
 const emptyFormValues: QuestionFormValues = {
   title: "",
-  difficulty: "Easy",
   description: "",
   marks: "",
-  language: "",
-  testCases: "",
+  difficulty: "EASY",
+  language: "JAVASCRIPT",
+  starterCode: "",
 };
+
+const difficultyOrder: Difficulty[] = ["EASY", "MEDIUM", "HARD"];
+const languageOptions: Language[] = [
+  "JAVASCRIPT",
+  "TYPESCRIPT",
+  "PYTHON",
+  "JAVA",
+  "CPLUSPLUS",
+  "GO",
+  "CSHARP",
+  "KOTLIN",
+  "RUST",
+  "SWIFT",
+  "RUBY",
+  "PHP",
+];
+
+function formatDifficulty(difficulty: Difficulty) {
+  return difficulty.charAt(0) + difficulty.slice(1).toLowerCase();
+}
+
+function formatLanguage(language: Language) {
+  if (language === "JAVASCRIPT") return "JavaScript";
+  if (language === "TYPESCRIPT") return "TypeScript";
+  if (language === "CPLUSPLUS") return "C++";
+  if (language === "CSHARP") return "C#";
+  return language.charAt(0) + language.slice(1).toLowerCase();
+}
+
+function getVisiblePages(currentPage: number, totalPages: number) {
+  if (totalPages <= 4) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 2) {
+    return [1, 2, 3, totalPages];
+  }
+
+  if (currentPage >= totalPages - 1) {
+    return [1, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, currentPage, currentPage + 1, totalPages];
+}
 
 function CodeAssessIcon() {
   return (
@@ -493,10 +353,11 @@ function CodeAssessIcon() {
 function QuestionBankHeader({
   searchQuery,
   onSearchChange,
+  onAddQuestion,
 }: QuestionBankHeaderProps) {
   return (
     <nav className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto grid w-full max-w-6xl gap-4 px-6 py-5 lg:grid-cols-[auto_minmax(18rem,24rem)_auto] lg:items-center">
         <div className="flex items-center gap-4">
           <Link
             href="/admin"
@@ -532,7 +393,7 @@ function QuestionBankHeader({
           </div>
         </div>
 
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full justify-self-center">
           <input
             type="text"
             placeholder="Search questions..."
@@ -552,32 +413,22 @@ function QuestionBankHeader({
             <path d="m21 21-4.35-4.35" strokeLinecap="round" />
           </svg>
         </div>
+
+        <div className="flex justify-start lg:justify-end">
+          <Button tone="green" size="md" onClick={onAddQuestion}>
+            + Add Question
+          </Button>
+        </div>
       </div>
     </nav>
   );
 }
 
-function AddQuestionCard({ onAddQuestion }: { onAddQuestion: () => void }) {
-  return (
-    <div className="flex items-center justify-between rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <div>
-        <h2 className="text-lg font-semibold text-zinc-900">Add New Question</h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          Expand your question library with new coding challenges.
-        </p>
-      </div>
-      <Button tone="green" size="md" onClick={onAddQuestion}>
-        + Add Question
-      </Button>
-    </div>
-  );
-}
-
 function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
   const badgeClasses =
-    difficulty === "Easy"
+    difficulty === "EASY"
       ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-      : difficulty === "Medium"
+      : difficulty === "MEDIUM"
         ? "bg-orange-50 text-orange-700 ring-orange-200"
         : "bg-rose-50 text-rose-700 ring-rose-200";
 
@@ -585,8 +436,116 @@ function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
     <span
       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${badgeClasses}`}
     >
-      {difficulty}
+      {formatDifficulty(difficulty)}
     </span>
+  );
+}
+
+function StatusFilter({
+  activeFilter,
+  onFilterChange,
+}: {
+  activeFilter: DifficultyFilter;
+  onFilterChange: (filter: DifficultyFilter) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const options: Array<{ value: DifficultyFilter; label: string }> = [
+    { value: "ALL", label: "All status" },
+    ...difficultyOrder.map((difficulty) => ({
+      value: difficulty,
+      label: formatDifficulty(difficulty),
+    })),
+  ];
+  const activeOption =
+    options.find((option) => option.value === activeFilter) ?? options[0];
+
+  return (
+    <section className="w-full rounded-3xl border border-zinc-200 bg-white px-6 py-6 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <span className="text-2xl font-medium text-zinc-700">Status</span>
+        <div
+          ref={containerRef}
+          className="relative w-full sm:max-w-[190px]"
+        >
+          <button
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={isOpen}
+            onClick={() => setIsOpen((current) => !current)}
+            className="flex w-full items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-left text-lg text-zinc-900 outline-none transition hover:border-emerald-300 hover:bg-emerald-50/40 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          >
+            <span>{activeOption.label}</span>
+            <svg
+              viewBox="0 0 24 24"
+              className={`h-5 w-5 text-zinc-500 transition-transform ${
+                isOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path
+                d="m6 9 6 6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          {isOpen ? (
+            <div className="absolute left-0 top-[calc(100%+0.5rem)] z-20 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-lg">
+              <ul role="listbox" aria-label="Question status filter">
+                {options.map((option) => {
+                  const isActive = option.value === activeFilter;
+                  const isAllStatus = option.value === "ALL";
+
+                  return (
+                    <li key={option.value}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onFilterChange(option.value);
+                          setIsOpen(false);
+                        }}
+                        className={`w-full px-5 py-3 text-left text-lg transition ${
+                          isAllStatus
+                            ? "bg-white text-zinc-900 hover:bg-white hover:text-zinc-900"
+                            : isActive
+                              ? "bg-emerald-600 text-white"
+                              : "bg-white text-zinc-900 hover:bg-emerald-600 hover:text-white"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -613,15 +572,15 @@ function IconButton({
   );
 }
 
-function truncateDescription(description: string) {
-  if (description.length <= 140) return description;
-  return `${description.slice(0, 137)}...`;
-}
-
-function QuestionCard({ question, onEdit, onDelete }: QuestionCardProps) {
+function QuestionCard({
+  question,
+  onViewDetails,
+  onEdit,
+  onDelete,
+}: QuestionCardProps) {
   return (
-    <article className="rounded-3xl border border-zinc-200 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <article className="rounded-3xl border border-zinc-200 bg-white px-4 py-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
@@ -630,31 +589,27 @@ function QuestionCard({ question, onEdit, onDelete }: QuestionCardProps) {
             <DifficultyBadge difficulty={question.difficulty} />
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-zinc-500">
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            {question.description}
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-zinc-500">
             <span>
               <span className="font-medium text-zinc-700">Marks:</span>{" "}
               {question.marks}
             </span>
             <span>
               <span className="font-medium text-zinc-700">Language:</span>{" "}
-              {question.language}
-            </span>
-            <span>
-              <span className="font-medium text-zinc-700">Test Cases:</span>{" "}
-              {question.testCases}
+              {formatLanguage(question.language)}
             </span>
           </div>
-
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
-            {truncateDescription(question.description)}
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             aria-label={`View details for ${question.title}`}
-            onClick={() => onEdit(question)}
+            onClick={() => onViewDetails(question)}
             className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900"
           >
             <svg
@@ -794,7 +749,7 @@ function CreateQuestionModal({
           <div>
             <h2 className="text-xl font-semibold text-zinc-900">{title}</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Add the full question details and keep your bank organized.
+              Fill in the required question fields and save your update.
             </p>
           </div>
           <button
@@ -826,7 +781,7 @@ function CreateQuestionModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
-          <Field label="Question Title">
+          <Field label="Title">
             <input
               value={values.title}
               onChange={(event) => updateField("title", event.target.value)}
@@ -845,22 +800,28 @@ function CreateQuestionModal({
                 }
                 className={inputClasses()}
               >
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
+                {difficultyOrder.map((difficulty) => (
+                  <option key={difficulty} value={difficulty}>
+                    {formatDifficulty(difficulty)}
+                  </option>
+                ))}
               </select>
             </Field>
 
             <Field label="Language">
-              <input
+              <select
                 value={values.language}
                 onChange={(event) =>
-                  updateField("language", event.target.value)
+                  updateField("language", event.target.value as Language)
                 }
                 className={inputClasses()}
-                placeholder="e.g. JavaScript"
-                required
-              />
+              >
+                {languageOptions.map((language) => (
+                  <option key={language} value={language}>
+                    {formatLanguage(language)}
+                  </option>
+                ))}
+              </select>
             </Field>
           </div>
 
@@ -870,8 +831,8 @@ function CreateQuestionModal({
               onChange={(event) =>
                 updateField("description", event.target.value)
               }
-              className={`${inputClasses()} min-h-32 resize-none`}
-              placeholder="Describe the problem statement, constraints, and expected output."
+              className={`${inputClasses()} min-h-28 resize-none`}
+              placeholder="Write a short question description."
               required
             />
           </Field>
@@ -880,7 +841,7 @@ function CreateQuestionModal({
             <Field label="Marks">
               <input
                 type="number"
-                min="1"
+                min="0"
                 value={values.marks}
                 onChange={(event) => updateField("marks", event.target.value)}
                 className={inputClasses()}
@@ -889,16 +850,14 @@ function CreateQuestionModal({
               />
             </Field>
 
-            <Field label="Test Cases">
-              <input
-                type="number"
-                min="1"
-                value={values.testCases}
+            <Field label="Starter Code">
+              <textarea
+                value={values.starterCode}
                 onChange={(event) =>
-                  updateField("testCases", event.target.value)
+                  updateField("starterCode", event.target.value)
                 }
-                className={inputClasses()}
-                placeholder="e.g. 8"
+                className={`${inputClasses()} min-h-28 resize-none`}
+                placeholder="Add starter code here."
                 required
               />
             </Field>
@@ -932,7 +891,7 @@ function DeleteQuestionModal({
               Delete Question
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
-             If you want to delete this question click on Ok if not Cancel.
+              If you want to delete this question click on Ok if not Cancel.
             </p>
           </div>
           <button
@@ -966,7 +925,7 @@ function DeleteQuestionModal({
         <div className="space-y-5 px-6 py-6">
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
             <p className="text-base font-medium text-zinc-900">
-              Are you sure you want to delete this question ?
+              Are you sure you want to delete {questionTitle}?
             </p>
           </div>
 
@@ -984,23 +943,97 @@ function DeleteQuestionModal({
   );
 }
 
+function QuestionDetailsModal({
+  question,
+  onClose,
+}: QuestionDetailsModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
+      <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
+              Question Details
+            </p>
+            <h2 className="mt-2 text-xl font-semibold text-zinc-900">
+              {question.title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            aria-label="Close details modal"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path
+                d="M18 6L6 18"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M6 6l12 12"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <DifficultyBadge difficulty={question.difficulty} />
+          <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
+            {formatLanguage(question.language)}
+          </span>
+          <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
+            {question.marks} marks
+          </span>
+        </div>
+
+        <div className="mt-5 rounded-2xl bg-zinc-50 p-4">
+          <p className="text-sm font-medium text-zinc-900">About Question</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            {question.description}
+          </p>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-zinc-200 p-4">
+          <p className="text-sm font-medium text-zinc-900">Starter Code</p>
+          <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm text-zinc-600">
+            {question.starterCode}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function toFormValues(question: Question): QuestionFormValues {
   return {
     title: question.title,
-    difficulty: question.difficulty,
     description: question.description,
     marks: String(question.marks),
+    difficulty: question.difficulty,
     language: question.language,
-    testCases: String(question.testCases),
+    starterCode: question.starterCode,
   };
 }
 
 function QuestionList({
   questions,
+  onViewDetails,
   onEdit,
   onDelete,
 }: {
   questions: Question[];
+  onViewDetails: (question: Question) => void;
   onEdit: (question: Question) => void;
   onDelete: (questionId: number) => void;
 }) {
@@ -1012,20 +1045,32 @@ function QuestionList({
             Question Library
           </h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Review, edit, and remove coding questions from your bank.
+            Review, edit, and filter questions by difficulty.
           </p>
         </div>
       </div>
 
       <div className="max-h-[32rem] space-y-4 overflow-y-auto pr-1">
-        {questions.map((question) => (
-          <QuestionCard
-            key={question.id}
-            question={question}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        ))}
+        {questions.length ? (
+          questions.map((question) => (
+            <QuestionCard
+              key={question.id}
+              question={question}
+              onViewDetails={onViewDetails}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))
+        ) : (
+          <div className="rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-12 text-center">
+            <p className="text-base font-medium text-zinc-900">
+              No questions found
+            </p>
+            <p className="mt-2 text-sm text-zinc-500">
+              Try another search or choose a different difficulty filter.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1035,16 +1080,23 @@ export default function QuestionBankPage() {
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
+  const [detailQuestionId, setDetailQuestionId] = useState<number | null>(null);
   const [pendingDeleteQuestionId, setPendingDeleteQuestionId] = useState<
     number | null
   >(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeFilter, setActiveFilter] = useState<DifficultyFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  const questionsPerPage = 4;
+  const questionsPerPage = 2;
 
   const activeQuestion = useMemo(
     () => questions.find((question) => question.id === activeQuestionId) ?? null,
     [activeQuestionId, questions]
+  );
+
+  const detailQuestion = useMemo(
+    () => questions.find((question) => question.id === detailQuestionId) ?? null,
+    [detailQuestionId, questions]
   );
 
   const pendingDeleteQuestion = useMemo(
@@ -1064,9 +1116,17 @@ export default function QuestionBankPage() {
     setModalMode("edit");
   }
 
+  function openDetailsModal(question: Question) {
+    setDetailQuestionId(question.id);
+  }
+
   function closeModal() {
     setModalMode(null);
     setActiveQuestionId(null);
+  }
+
+  function closeDetailsModal() {
+    setDetailQuestionId(null);
   }
 
   function requestDelete(questionId: number) {
@@ -1090,17 +1150,21 @@ export default function QuestionBankPage() {
       closeModal();
     }
 
+    if (detailQuestionId === pendingDeleteQuestionId) {
+      closeDetailsModal();
+    }
+
     closeDeleteModal();
   }
 
   function handleSave(values: QuestionFormValues) {
     const nextQuestion: Omit<Question, "id"> = {
       title: values.title.trim(),
-      difficulty: values.difficulty,
       description: values.description.trim(),
       marks: Number(values.marks),
-      language: values.language.trim(),
-      testCases: Number(values.testCases),
+      difficulty: values.difficulty,
+      language: values.language,
+      starterCode: values.starterCode.trim(),
     };
 
     if (modalMode === "edit" && activeQuestionId !== null) {
@@ -1129,15 +1193,29 @@ export default function QuestionBankPage() {
     setCurrentPage(1);
   }
 
+  function handleFilterChange(filter: DifficultyFilter) {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  }
+
   const modalInitialValues =
     modalMode === "edit" && activeQuestion
       ? toFormValues(activeQuestion)
       : emptyFormValues;
 
-  const filteredQuestions = questions.filter((question) =>
-    question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    question.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredQuestions = questions.filter((question) => {
+    const matchesSearch =
+      question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      question.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      formatLanguage(question.language)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+    const matchesDifficulty =
+      activeFilter === "ALL" || question.difficulty === activeFilter;
+
+    return matchesSearch && matchesDifficulty;
+  });
 
   const totalPages = Math.max(
     1,
@@ -1149,64 +1227,82 @@ export default function QuestionBankPage() {
     startIndex,
     startIndex + questionsPerPage
   );
+  const visiblePages = getVisiblePages(visiblePage, totalPages);
 
   return (
     <main className="min-h-screen bg-zinc-50">
       <QuestionBankHeader
-        questionCount={questions.length}
-        onAddQuestion={openCreateModal}
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
+        onAddQuestion={openCreateModal}
       />
 
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
-        <div className="mt-6">
-          <AddQuestionCard onAddQuestion={openCreateModal} />
-        </div>
+        <StatusFilter
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+        />
 
         <div className="mt-6">
           <QuestionList
             questions={paginatedQuestions}
+            onViewDetails={openDetailsModal}
             onEdit={openEditModal}
             onDelete={requestDelete}
           />
         </div>
 
-        <div className="mt-6 rounded-3xl border border-zinc-200 bg-white px-4 py-4 shadow-sm sm:px-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6 flex justify-end">
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-3 py-3 shadow-sm">
             <button
               onClick={() => setCurrentPage(Math.max(visiblePage - 1, 1))}
               disabled={visiblePage === 1}
-              className="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-emerald-200 disabled:bg-emerald-200"
+              className="inline-flex items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-emerald-200 disabled:bg-emerald-200"
             >
               Previous
             </button>
 
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`rounded-xl px-3.5 py-2 text-sm font-medium transition ${
-                    visiblePage === page
-                      ? "bg-emerald-600 text-white"
-                      : "border border-zinc-200 bg-white text-zinc-700 hover:border-emerald-200 hover:text-emerald-700"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              {visiblePages.map((page, index) => {
+                const previousPage = visiblePages[index - 1];
+                const showEllipsis =
+                  index > 0 && previousPage !== undefined && page - previousPage > 1;
+
+                return (
+                  <div key={page} className="flex items-center gap-2">
+                    {showEllipsis ? (
+                      <span className="px-1 text-sm font-medium text-zinc-400">
+                        ...
+                      </span>
+                    ) : null}
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      className={`min-w-9 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                        visiblePage === page
+                          ? "bg-emerald-600 text-white"
+                          : "border border-zinc-200 bg-white text-zinc-700 hover:border-emerald-200 hover:text-emerald-700"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             <button
               onClick={() => setCurrentPage(Math.min(visiblePage + 1, totalPages))}
               disabled={visiblePage === totalPages}
-              className="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-emerald-200 disabled:bg-emerald-200"
+              className="inline-flex items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-emerald-200 disabled:bg-emerald-200"
             >
               Next
             </button>
           </div>
         </div>
+
+        <p className="mt-10 text-center text-sm text-zinc-500">
+          © 2026 CodeAssess. All rights reserved.
+        </p>
       </div>
 
       {modalMode ? (
@@ -1215,6 +1311,13 @@ export default function QuestionBankPage() {
           initialValues={modalInitialValues}
           onClose={closeModal}
           onSave={handleSave}
+        />
+      ) : null}
+
+      {detailQuestion ? (
+        <QuestionDetailsModal
+          question={detailQuestion}
+          onClose={closeDetailsModal}
         />
       ) : null}
 
