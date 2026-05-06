@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Status = "pending" | "passed" | "failed" | "interview";
+type TabKey = "all" | "reviewed" | Status;
 
 type Submission = {
   id: number;
@@ -11,6 +12,8 @@ type Submission = {
   status: Status;
   title: string;
   date: string;
+  questions: number;
+  reviewNotes?: string;
 };
 
 const initialData: Submission[] = [
@@ -19,90 +22,119 @@ const initialData: Submission[] = [
     name: "Yvette",
     status: "passed",
     title: "JavaScript Developer Assessment",
-    date: "4/29/2026",
+    date: "4/29/2026, 3:32:34 PM",
+    questions: 3,
+    reviewNotes: ",n",
   },
   {
     id: 2,
     name: "Yvette",
     status: "pending",
     title: "JavaScript Developer Assessment",
-    date: "5/5/2026",
+    date: "5/5/2026, 12:51:09 AM",
+    questions: 3,
   },
 ];
 
 const statusStyles: Record<Status, string> = {
-  passed: "bg-green-100 text-green-700",
-  pending: "bg-orange-100 text-orange-700",
+  passed: "bg-emerald-100 text-emerald-700",
+  pending: "bg-orange-100 text-orange-600",
   failed: "bg-red-100 text-red-700",
   interview: "bg-blue-100 text-blue-700",
+};
+
+const statusLabels: Record<Status, string> = {
+  passed: "Passed",
+  pending: "Pending",
+  failed: "Failed",
+  interview: "Interview",
 };
 
 export default function CodeReviewsPage() {
   const router = useRouter();
 
   const [submissions, setSubmissions] = useState(initialData);
-  const [activeTab, setActiveTab] = useState<"all" | Status>("all");
+  const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [selected, setSelected] = useState<Submission | null>(null);
   const [activeQuestion, setActiveQuestion] = useState(0);
 
   const questions = [
     {
-      title: "Question 1 (20 marks)",
+      title: "Question 1",
+      heading: "Two Sum",
+      marks: 20,
       code: `function twoSum(nums, target) {
-  return [];
+  // Write your code here
+  hghfgfghhk
 }`,
     },
     {
-      title: "Question 2 (15 marks)",
+      title: "Question 2",
+      heading: "Reverse String",
+      marks: 15,
       code: `function reverseString(str) {
   return str.split("").reverse().join("");
 }`,
     },
     {
-      title: "Question 3 (25 marks)",
+      title: "Question 3",
+      heading: "Palindrome",
+      marks: 25,
       code: `function isPalindrome(str) {
   return str === str.split("").reverse().join("");
 }`,
     },
   ];
 
-  const filtered = submissions.filter((s) =>
-    activeTab === "all" ? true : s.status === activeTab
-  );
+  const filtered = submissions.filter((submission) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "reviewed") return false;
+    return submission.status === activeTab;
+  });
 
   const count = (status: Status) =>
-    submissions.filter((s) => s.status === status).length;
+    submissions.filter((submission) => submission.status === status).length;
 
   const updateStatus = (id: number, newStatus: Status) => {
     setSubmissions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
+      prev.map((submission) =>
+        submission.id === id ? { ...submission, status: newStatus } : submission
+      )
     );
     setSelected(null);
   };
 
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "all", label: `All (${submissions.length})` },
+    { key: "pending", label: `Pending (${count("pending")})` },
+    { key: "reviewed", label: "Reviewed (0)" },
+    { key: "passed", label: `Passed (${count("passed")})` },
+    { key: "failed", label: `Failed (${count("failed")})` },
+    { key: "interview", label: `Interview (${count("interview")})` },
+  ];
+
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
-
+    <div className="min-h-screen overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
       {/* HEADER */}
-      <div className="bg-white border-b px-6 py-3">
-        <div className="flex items-center gap-3">
-
-          {/* Back Arrow */}
+      <div className="border-b border-zinc-200 bg-white px-8 py-5">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/admin")}
-            className="p-2 rounded hover:bg-zinc-100"
+            className="text-2xl leading-none text-zinc-950 transition-colors hover:text-zinc-600"
+            aria-label="Back to admin"
           >
-            ←
+            &larr;
           </button>
 
-          {/* Logo */}
-          <div className="h-8 w-8 flex items-center justify-center rounded bg-orange-500 text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 text-lg font-bold text-white">
             {"</>"}
           </div>
 
           <div>
-            <h1 className="text-sm font-semibold">Code Reviews</h1>
-            <p className="text-xs text-zinc-500">
+            <h1 className="text-xl font-semibold leading-tight text-zinc-950">
+              Code Reviews
+            </h1>
+            <p className="text-sm text-zinc-500">
               {submissions.length} submissions
             </p>
           </div>
@@ -110,22 +142,14 @@ export default function CodeReviewsPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="px-6 mt-4">
-        <div className="flex gap-6 text-sm border-b pb-2">
-          {[
-            { key: "all", label: `All (${submissions.length})` },
-            { key: "pending", label: `Pending (${count("pending")})` },
-            { key: "passed", label: `Passed (${count("passed")})` },
-            { key: "failed", label: `Failed (${count("failed")})` },
-            { key: "interview", label: `Interview (${count("interview")})` },
-          ].map((tab) => (
+      <div className="px-8 pt-11">
+        <div className="flex flex-wrap gap-x-10 gap-y-3 border-b border-zinc-200 pb-3 text-sm font-semibold text-zinc-950">
+          {tabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`pb-1 ${
-                activeTab === tab.key
-                  ? "border-b-2 border-black font-medium"
-                  : "text-zinc-500"
+              onClick={() => setActiveTab(tab.key)}
+              className={`transition-colors ${
+                activeTab === tab.key ? "text-zinc-950" : "hover:text-zinc-600"
               }`}
             >
               {tab.label}
@@ -135,25 +159,37 @@ export default function CodeReviewsPage() {
       </div>
 
       {/* LIST */}
-      <main className="px-6 py-6 space-y-4 flex-1">
+      <main className="space-y-4 px-8 py-6">
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="bg-white border rounded-lg p-5 flex justify-between items-center"
+            className="flex items-start justify-between gap-6 rounded-lg border border-zinc-200 bg-white px-6 py-6"
           >
-            <div>
-              <div className="flex gap-3 items-center">
-                <span className="font-medium">{item.name}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <span className="text-base font-bold text-zinc-950">
+                  {item.name.toLowerCase()}
+                </span>
                 <span
-                  className={`text-xs px-2 py-1 rounded-full ${statusStyles[item.status]}`}
+                  className={`rounded-full px-3 py-1 text-xs ${statusStyles[item.status]}`}
                 >
-                  {item.status}
+                  {statusLabels[item.status]}
                 </span>
               </div>
-              <div className="text-sm text-zinc-600">{item.title}</div>
-              <div className="text-xs text-zinc-400">
-                {item.date}
+
+              <div className="mt-3 text-sm text-slate-700">{item.title}</div>
+
+              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-700">
+                <span>Questions: {item.questions}</span>
+                <span>Submitted: {item.date}</span>
               </div>
+
+              {item.reviewNotes && (
+                <div className="mt-4 rounded-md bg-zinc-50 px-3 py-3 text-sm text-slate-900">
+                  <span className="font-bold">Review Notes:</span>{" "}
+                  {item.reviewNotes}
+                </div>
+              )}
             </div>
 
             <button
@@ -161,8 +197,27 @@ export default function CodeReviewsPage() {
                 setSelected(item);
                 setActiveQuestion(0);
               }}
-              className="bg-green-600 text-white px-4 py-2 rounded"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-600"
             >
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M2.25 12s3.75-6 9.75-6 9.75 6 9.75 6-3.75 6-9.75 6-9.75-6-9.75-6Z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                />
+              </svg>
               Review
             </button>
           </div>
@@ -171,86 +226,188 @@ export default function CodeReviewsPage() {
 
       {/* MODAL */}
       {selected && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white w-[95%] max-w-5xl p-6 rounded">
-
-            <div className="flex justify-between">
-              <h2 className="font-semibold">{selected.name}</h2>
-              <button onClick={() => setSelected(null)}>✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-6">
+          <div className="max-h-[90vh] w-full max-w-[1152px] overflow-hidden rounded-lg bg-white shadow-2xl">
+            <div className="flex items-start justify-between px-6 py-7">
+              <div>
+                <h2 className="text-2xl font-bold leading-tight text-zinc-950">
+                  {selected.name.toLowerCase()}
+                </h2>
+                <p className="mt-2 text-sm text-slate-700">{selected.title}</p>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-3xl leading-none text-slate-400 hover:text-slate-600"
+                aria-label="Close review modal"
+              >
+                &times;
+              </button>
             </div>
 
-            <div className="mt-6 grid grid-cols-3 gap-4">
+            <div className="grid max-h-[248px] grid-cols-[256px_1fr] overflow-hidden border-y border-zinc-200">
+              <aside className="overflow-y-auto border-r border-zinc-200 bg-white p-4">
+                <h3 className="mb-3 text-lg font-bold text-zinc-950">Answers</h3>
+                <div className="space-y-2">
+                  {questions.map((question, index) => (
+                    <button
+                      key={question.title}
+                      onClick={() => setActiveQuestion(index)}
+                      className={`w-full rounded-md border p-3 text-left transition-colors ${
+                        activeQuestion === index
+                          ? "border-emerald-500 bg-emerald-500 text-white"
+                          : "border-zinc-200 bg-white text-zinc-950 hover:border-emerald-300"
+                      }`}
+                    >
+                      <span className="block font-bold">{question.title}</span>
+                      <span className="mt-1 block text-sm font-semibold">
+                        {question.marks} marks
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </aside>
 
-              {/* QUESTIONS */}
-              <div className="space-y-2">
-                {questions.map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveQuestion(i)}
-                    className={`w-full text-left p-2 rounded ${
-                      activeQuestion === i
-                        ? "bg-green-500 text-white"
-                        : "bg-zinc-100"
-                    }`}
+              <section className="overflow-y-auto bg-white pt-7">
+                <div className="px-6">
+                  <h3 className="text-xl font-bold text-zinc-950">
+                    {questions[activeQuestion].heading}
+                  </h3>
+                  <div className="mt-3 flex items-center gap-3 text-sm text-slate-600">
+                    <span className="rounded bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">
+                      {questions[activeQuestion].marks}
+                    </span>
+                    <span>{questions[activeQuestion].marks} marks</span>
+                  </div>
+                </div>
+
+                <pre className="mt-2 min-h-[174px] overflow-auto bg-[#1e1e1e] px-8 py-0 text-sm leading-6 text-white">
+                  <code>
+                    {questions[activeQuestion].code
+                      .split("\n")
+                      .map((line, index) => (
+                        <span key={`${line}-${index}`} className="block">
+                          <span className="mr-6 inline-block w-3 select-none text-right text-slate-400">
+                            {index + 1}
+                          </span>
+                          <span
+                            className={
+                              line.trim().startsWith("//")
+                                ? "text-green-500"
+                                : index === 0
+                                  ? "text-sky-300"
+                                  : "text-white"
+                            }
+                          >
+                            {line || " "}
+                          </span>
+                        </span>
+                      ))}
+                  </code>
+                </pre>
+              </section>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 px-6 py-7">
+              <label className="text-sm font-medium text-slate-900">
+                Score (%) - Optional
+                <input
+                  type="text"
+                  placeholder="Enter score"
+                  className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-4 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                />
+              </label>
+
+              <label className="text-sm font-medium text-slate-900">
+                Review Notes - Optional
+                <textarea
+                  defaultValue={selected.reviewNotes ?? ""}
+                  className="mt-2 h-11 w-full resize-none rounded-lg border border-emerald-500 px-4 py-3 text-sm outline-none ring-1 ring-emerald-500"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-50 px-6 pb-6">
+              <p className="text-sm text-slate-700">
+                Question {activeQuestion + 1} of {questions.length}
+              </p>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => updateStatus(selected.id, "failed")}
+                  className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-3 font-bold text-white hover:bg-red-600"
+                >
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full border border-white text-xs">
+                    x
+                  </span>
+                  Mark as Failed
+                </button>
+
+                <button
+                  onClick={() => updateStatus(selected.id, "passed")}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 font-bold text-white hover:bg-emerald-600"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
                   >
-                    {q.title}
-                  </button>
-                ))}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75 11.25 15 15 9.75"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                  Mark as Passed
+                </button>
+
+                <button
+                  onClick={() => updateStatus(selected.id, "interview")}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-bold text-white hover:bg-blue-700"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 19.13a6.75 6.75 0 0 0-6 0"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 12.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M18 10.5h3m-1.5-1.5v3"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21a9 9 0 1 0-18 0"
+                    />
+                  </svg>
+                  Qualify for Interview
+                </button>
               </div>
-
-              {/* CODE */}
-              <div className="col-span-2 bg-black text-green-400 p-4 rounded">
-                {questions[activeQuestion].code}
-              </div>
-            </div>
-
-            {/* ACTIONS */}
-            <div className="mt-6 flex gap-3 justify-end">
-              <button
-                onClick={() => updateStatus(selected.id, "failed")}
-                className="bg-red-500 text-white px-4 py-2 rounded"
-              >
-                Failed
-              </button>
-
-              <button
-                onClick={() => updateStatus(selected.id, "passed")}
-                className="bg-green-600 text-white px-4 py-2 rounded"
-              >
-                Passed
-              </button>
-
-              <button
-                onClick={() => updateStatus(selected.id, "interview")}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                Interview
-              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* BOTTOM ACTIONS */}
-      <div className="px-6 py-4 flex justify-center gap-3">
-        <button className="bg-red-500 text-white px-4 py-2 rounded">
-          Failed
-        </button>
-        <button className="bg-green-600 text-white px-4 py-2 rounded">
-          Passed
-        </button>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded">
-          Interview
-        </button>
-      </div>
-
-      {/* PAGINATION */}
-      <div className="px-6 py-4 flex justify-center gap-2">
-        <button className="border px-3 py-1">Prev</button>
-        <button className="border px-3 py-1 bg-black text-white">1</button>
-        <button className="border px-3 py-1">2</button>
-        <button className="border px-3 py-1">Next</button>
-      </div>
     </div>
   );
 }
