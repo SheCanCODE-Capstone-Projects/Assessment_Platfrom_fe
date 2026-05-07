@@ -39,12 +39,6 @@ type QuestionFormValues = {
   starterCode: string;
 };
 
-type QuestionBankHeaderProps = {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onAddQuestion: () => void;
-};
-
 type QuestionCardProps = {
   question: Question;
   onViewDetails: (question: Question) => void;
@@ -268,6 +262,66 @@ const initialQuestions: Question[] = [
     starterCode:
       "public IList<int> SpiralOrder(int[][] matrix) {\n    // solve here\n}",
   },
+  {
+    id: 21,
+    title: "Fizz Buzz",
+    description: "Return the right word or number for each value from one to n.",
+    marks: 10,
+    difficulty: "EASY",
+    language: "PHP",
+    starterCode:
+      "function fizzBuzz($n) {\n    // solve here\n}",
+  },
+  {
+    id: 22,
+    title: "Min Stack",
+    description: "Design a stack that can return the minimum value in constant time.",
+    marks: 29,
+    difficulty: "MEDIUM",
+    language: "TYPESCRIPT",
+    starterCode:
+      "class MinStack {\n  // solve here\n}",
+  },
+  {
+    id: 23,
+    title: "Serialize Binary Tree",
+    description: "Convert a binary tree to text and rebuild it again.",
+    marks: 48,
+    difficulty: "HARD",
+    language: "PYTHON",
+    starterCode:
+      "class Codec:\n    def serialize(self, root):\n        pass\n\n    def deserialize(self, data):\n        pass",
+  },
+  {
+    id: 24,
+    title: "Single Number",
+    description: "Find the one value that appears only once in the array.",
+    marks: 18,
+    difficulty: "EASY",
+    language: "SWIFT",
+    starterCode:
+      "func singleNumber(_ nums: [Int]) -> Int {\n    // solve here\n}",
+  },
+  {
+    id: 25,
+    title: "Course Schedule",
+    description: "Decide if all courses can be finished from the prerequisite list.",
+    marks: 33,
+    difficulty: "MEDIUM",
+    language: "JAVA",
+    starterCode:
+      "public boolean canFinish(int numCourses, int[][] prerequisites) {\n    // solve here\n}",
+  },
+  {
+    id: 26,
+    title: "Alien Dictionary",
+    description: "Work out the letter order from a sorted list of alien words.",
+    marks: 52,
+    difficulty: "HARD",
+    language: "GO",
+    starterCode:
+      "func alienOrder(words []string) string {\n    // solve here\n}",
+  },
 ];
 
 const emptyFormValues: QuestionFormValues = {
@@ -350,14 +404,10 @@ function CodeAssessIcon() {
   );
 }
 
-function QuestionBankHeader({
-  searchQuery,
-  onSearchChange,
-  onAddQuestion,
-}: QuestionBankHeaderProps) {
+function QuestionBankHeader() {
   return (
     <nav className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto grid w-full max-w-6xl gap-4 px-6 py-5 lg:grid-cols-[auto_minmax(18rem,24rem)_auto] lg:items-center">
+      <div className="mx-auto flex w-full max-w-6xl items-center px-6 py-5">
         <div className="flex items-center gap-4">
           <Link
             href="/admin"
@@ -392,35 +442,41 @@ function QuestionBankHeader({
             </div>
           </div>
         </div>
-
-        <div className="relative w-full justify-self-center">
-          <input
-            type="text"
-            placeholder="Search questions..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 pl-10 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-          />
-          <svg
-            viewBox="0 0 24 24"
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        <div className="flex justify-start lg:justify-end">
-          <Button tone="green" size="md" onClick={onAddQuestion}>
-            + Add Question
-          </Button>
-        </div>
       </div>
     </nav>
+  );
+}
+
+function SearchSection({
+  searchQuery,
+  onSearchChange,
+}: {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+}) {
+  return (
+    <section className="flex justify-end">
+      <div className="relative w-full sm:w-[240px]">
+        <input
+          type="text"
+          placeholder="Search questions..."
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.target.value)}
+          className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 pl-10 pr-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+        />
+        <svg
+          viewBox="0 0 24 24"
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" strokeLinecap="round" />
+        </svg>
+      </div>
+    </section>
   );
 }
 
@@ -444,9 +500,11 @@ function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
 function StatusFilter({
   activeFilter,
   onFilterChange,
+  onAddQuestion,
 }: {
   activeFilter: DifficultyFilter;
   onFilterChange: (filter: DifficultyFilter) => void;
+  onAddQuestion: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -480,40 +538,46 @@ function StatusFilter({
 
   return (
     <section className="w-full rounded-3xl border border-zinc-200 bg-white px-6 py-6 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <span className="text-2xl font-medium text-zinc-700">Status</span>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Button tone="green" size="md" onClick={onAddQuestion}>
+          + Add Question
+        </Button>
+
         <div
           ref={containerRef}
-          className="relative w-full sm:max-w-[190px]"
+          className="relative w-full sm:w-auto sm:min-w-[170px]"
         >
-          <button
-            type="button"
-            aria-haspopup="listbox"
-            aria-expanded={isOpen}
-            onClick={() => setIsOpen((current) => !current)}
-            className="flex w-full items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-left text-lg text-zinc-900 outline-none transition hover:border-emerald-300 hover:bg-emerald-50/40 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-          >
-            <span>{activeOption.label}</span>
-            <svg
-              viewBox="0 0 24 24"
-              className={`h-5 w-5 text-zinc-500 transition-transform ${
-                isOpen ? "rotate-180" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
+          <div className="flex items-center justify-end gap-3">
+            <span className="text-sm font-medium text-zinc-600">Question Status</span>
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={isOpen}
+              onClick={() => setIsOpen((current) => !current)}
+              className="flex min-w-[130px] items-center justify-between rounded-xl border border-zinc-200 bg-white px-3 py-2 text-left text-sm text-zinc-900 outline-none transition hover:border-emerald-300 hover:bg-emerald-50/40 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             >
-              <path
-                d="m6 9 6 6 6-6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+              <span>{activeOption.label}</span>
+              <svg
+                viewBox="0 0 24 24"
+                className={`h-4 w-4 text-zinc-500 transition-transform ${
+                  isOpen ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  d="m6 9 6 6 6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
 
           {isOpen ? (
-            <div className="absolute left-0 top-[calc(100%+0.5rem)] z-20 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-lg">
+            <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-lg">
               <ul role="listbox" aria-label="Question status filter">
                 {options.map((option) => {
                   const isActive = option.value === activeFilter;
@@ -527,7 +591,7 @@ function StatusFilter({
                           onFilterChange(option.value);
                           setIsOpen(false);
                         }}
-                        className={`w-full px-5 py-3 text-left text-lg transition ${
+                        className={`w-full px-4 py-2.5 text-left text-sm transition ${
                           isAllStatus
                             ? "bg-white text-zinc-900 hover:bg-white hover:text-zinc-900"
                             : isActive
@@ -744,11 +808,11 @@ function CreateQuestionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4 py-8">
-      <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-zinc-200 px-6 py-5">
+      <div className="w-full max-w-xl rounded-3xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-zinc-200 px-5 py-3.5">
           <div>
-            <h2 className="text-xl font-semibold text-zinc-900">{title}</h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+            <p className="mt-0.5 text-sm text-zinc-500">
               Fill in the required question fields and save your update.
             </p>
           </div>
@@ -780,18 +844,18 @@ function CreateQuestionModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
-          <Field label="Title">
-            <input
-              value={values.title}
-              onChange={(event) => updateField("title", event.target.value)}
-              className={inputClasses()}
-              placeholder="e.g. Two Sum"
-              required
-            />
-          </Field>
+        <form onSubmit={handleSubmit} className="space-y-3 px-5 py-3.5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Title">
+              <input
+                value={values.title}
+                onChange={(event) => updateField("title", event.target.value)}
+                className={inputClasses()}
+                placeholder="e.g. Two Sum"
+                required
+              />
+            </Field>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field label="Difficulty">
               <select
                 value={values.difficulty}
@@ -807,7 +871,9 @@ function CreateQuestionModal({
                 ))}
               </select>
             </Field>
+          </div>
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Language">
               <select
                 value={values.language}
@@ -823,21 +889,7 @@ function CreateQuestionModal({
                 ))}
               </select>
             </Field>
-          </div>
 
-          <Field label="Description">
-            <textarea
-              value={values.description}
-              onChange={(event) =>
-                updateField("description", event.target.value)
-              }
-              className={`${inputClasses()} min-h-28 resize-none`}
-              placeholder="Write a short question description."
-              required
-            />
-          </Field>
-
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field label="Marks">
               <input
                 type="number"
@@ -849,22 +901,41 @@ function CreateQuestionModal({
                 required
               />
             </Field>
+          </div>
 
+          <Field label="Description">
+            <textarea
+              value={values.description}
+              onChange={(event) =>
+                updateField("description", event.target.value)
+              }
+              className={`${inputClasses()} min-h-20 resize-none`}
+              placeholder="Write a short question description."
+              required
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 gap-3">
             <Field label="Starter Code">
               <textarea
                 value={values.starterCode}
                 onChange={(event) =>
                   updateField("starterCode", event.target.value)
                 }
-                className={`${inputClasses()} min-h-28 resize-none`}
+                className={`${inputClasses()} min-h-20 resize-none`}
                 placeholder="Add starter code here."
                 required
               />
             </Field>
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:justify-end">
-            <Button variant="outline" tone="zinc" onClick={onClose}>
+          <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-3 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              tone="zinc"
+              onClick={onClose}
+              className="border-red-500 text-red-600 hover:bg-red-50"
+            >
               Cancel
             </Button>
             <Button type="submit" tone="green">
@@ -930,7 +1001,11 @@ function DeleteQuestionModal({
           </div>
 
           <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:justify-end">
-            <Button tone="orange" onClick={onCancel}>
+            <Button
+              tone="zinc"
+              onClick={onCancel}
+              className="border-red-600 bg-red-600 text-white hover:bg-red-700"
+            >
               Cancel
             </Button>
             <Button tone="green" onClick={onConfirm}>
@@ -1087,7 +1162,7 @@ export default function QuestionBankPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<DifficultyFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  const questionsPerPage = 2;
+  const questionsPerPage = 6;
 
   const activeQuestion = useMemo(
     () => questions.find((question) => question.id === activeQuestionId) ?? null,
@@ -1231,17 +1306,21 @@ export default function QuestionBankPage() {
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <QuestionBankHeader
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
-        onAddQuestion={openCreateModal}
-      />
+      <QuestionBankHeader />
 
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
-        <StatusFilter
-          activeFilter={activeFilter}
-          onFilterChange={handleFilterChange}
+        <SearchSection
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
         />
+
+        <div className="mt-6">
+          <StatusFilter
+            activeFilter={activeFilter}
+            onFilterChange={handleFilterChange}
+            onAddQuestion={openCreateModal}
+          />
+        </div>
 
         <div className="mt-6">
           <QuestionList
