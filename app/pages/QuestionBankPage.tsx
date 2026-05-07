@@ -34,7 +34,7 @@ type QuestionFormValues = {
   title: string;
   description: string;
   marks: string;
-  difficulty: Difficulty;
+  difficulty: Difficulty | "";
   language: Language;
   starterCode: string;
 };
@@ -328,7 +328,7 @@ const emptyFormValues: QuestionFormValues = {
   title: "",
   description: "",
   marks: "",
-  difficulty: "EASY",
+  difficulty: "",
   language: "JAVASCRIPT",
   starterCode: "",
 };
@@ -462,7 +462,7 @@ function SearchSection({
           placeholder="Search questions..."
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 pl-10 pr-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          className="h-10 w-full rounded-md border border-zinc-900  px-3 pl-10 pr-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
         />
         <svg
           viewBox="0 0 24 24"
@@ -726,7 +726,7 @@ function QuestionCard({
 
           <IconButton
             label={`Delete ${question.title}`}
-            className="border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
+            className="border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
             onClick={() => onDelete(question.id)}
           >
             <svg
@@ -783,6 +783,175 @@ function inputClasses() {
   return "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100";
 }
 
+function SelectChevron({ isOpen }: { isOpen: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <path
+        d="m6 9 6 6 6-6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function DifficultySelect({
+  value,
+  onChange,
+}: {
+  value: Difficulty | "";
+  onChange: (value: Difficulty) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between rounded-xl border border-emerald-400 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-emerald-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+      >
+        <span className={value ? "text-zinc-900" : "text-zinc-500"}>
+          {value ? formatDifficulty(value) : "Question Type"}
+        </span>
+        <span className="text-emerald-700">
+          <SelectChevron isOpen={isOpen} />
+        </span>
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-20 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-lg">
+          <ul role="listbox" aria-label="Difficulty">
+            {difficultyOrder.map((difficulty) => {
+              const isActive = difficulty === value;
+
+              return (
+                <li key={difficulty}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(difficulty);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-4 py-2.5 text-left text-sm transition ${
+                      isActive
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white text-zinc-900 hover:bg-emerald-600 hover:text-white"
+                    }`}
+                  >
+                    {formatDifficulty(difficulty)}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LanguageSelect({
+  value,
+  onChange,
+}: {
+  value: Language;
+  onChange: (value: Language) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left text-sm text-zinc-900 outline-none transition hover:border-emerald-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+      >
+        <span>{formatLanguage(value)}</span>
+        <span className="text-zinc-700">
+          <SelectChevron isOpen={isOpen} />
+        </span>
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-20 max-h-72 overflow-y-auto rounded-2xl border border-emerald-200 bg-white shadow-lg [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <ul role="listbox" aria-label="Language">
+            {languageOptions.map((language) => {
+              const isActive = language === value;
+
+              return (
+                <li key={language}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(language);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-4 py-2.5 text-left text-sm transition ${
+                      isActive
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white text-zinc-900 hover:bg-emerald-600 hover:text-white"
+                    }`}
+                  >
+                    {formatLanguage(language)}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function CreateQuestionModal({
   initialValues,
   mode,
@@ -790,16 +959,27 @@ function CreateQuestionModal({
   onSave,
 }: CreateQuestionModalProps) {
   const [values, setValues] = useState<QuestionFormValues>(initialValues);
+  const [showDifficultyError, setShowDifficultyError] = useState(false);
 
   function updateField<K extends keyof QuestionFormValues>(
     field: K,
     value: QuestionFormValues[K]
   ) {
+    if (field === "difficulty" && value) {
+      setShowDifficultyError(false);
+    }
+
     setValues((current) => ({ ...current, [field]: value }));
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!values.difficulty) {
+      setShowDifficultyError(true);
+      return;
+    }
+
     onSave(values);
   }
 
@@ -857,37 +1037,24 @@ function CreateQuestionModal({
             </Field>
 
             <Field label="Difficulty">
-              <select
+              <DifficultySelect
                 value={values.difficulty}
-                onChange={(event) =>
-                  updateField("difficulty", event.target.value as Difficulty)
-                }
-                className={inputClasses()}
-              >
-                {difficultyOrder.map((difficulty) => (
-                  <option key={difficulty} value={difficulty}>
-                    {formatDifficulty(difficulty)}
-                  </option>
-                ))}
-              </select>
+                onChange={(difficulty) => updateField("difficulty", difficulty)}
+              />
+              {showDifficultyError ? (
+                <p className="mt-2 text-xs text-red-600">
+                  Please choose a question type.
+                </p>
+              ) : null}
             </Field>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Language">
-              <select
+              <LanguageSelect
                 value={values.language}
-                onChange={(event) =>
-                  updateField("language", event.target.value as Language)
-                }
-                className={inputClasses()}
-              >
-                {languageOptions.map((language) => (
-                  <option key={language} value={language}>
-                    {formatLanguage(language)}
-                  </option>
-                ))}
-              </select>
+                onChange={(language) => updateField("language", language)}
+              />
             </Field>
 
             <Field label="Marks">
@@ -931,10 +1098,9 @@ function CreateQuestionModal({
 
           <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-3 sm:flex-row sm:justify-end">
             <Button
-              variant="outline"
               tone="zinc"
               onClick={onClose}
-              className="border-red-500 text-red-600 hover:bg-red-50"
+              className="bg-red-600 text-white hover:bg-red-700"
             >
               Cancel
             </Button>
@@ -1125,7 +1291,9 @@ function QuestionList({
         </div>
       </div>
 
-      <div className="max-h-[32rem] space-y-4 overflow-y-auto pr-1">
+      <div
+        className="max-h-[32rem] space-y-4 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
         {questions.length ? (
           questions.map((question) => (
             <QuestionCard
@@ -1237,7 +1405,7 @@ export default function QuestionBankPage() {
       title: values.title.trim(),
       description: values.description.trim(),
       marks: Number(values.marks),
-      difficulty: values.difficulty,
+      difficulty: values.difficulty || "EASY",
       language: values.language,
       starterCode: values.starterCode.trim(),
     };
