@@ -50,6 +50,8 @@ const statusLabels: Record<Status, string> = {
   interview: "Interview",
 };
 
+const pageSize = 5;
+
 export default function CodeReviewsPage() {
   const router = useRouter();
 
@@ -57,6 +59,8 @@ export default function CodeReviewsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [selected, setSelected] = useState<Submission | null>(null);
   const [activeQuestion, setActiveQuestion] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
 
   const questions = [
     {
@@ -86,11 +90,31 @@ export default function CodeReviewsPage() {
     },
   ];
 
+  const [answers, setAnswers] = useState(() =>
+    questions.map((question) => question.code)
+  );
+
+  const activeAnswerLines = answers[activeQuestion].split("\n");
+
   const filtered = submissions.filter((submission) => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      normalizedSearch.length === 0 ||
+      submission.name.toLowerCase().includes(normalizedSearch) ||
+      submission.title.toLowerCase().includes(normalizedSearch) ||
+      submission.status.toLowerCase().includes(normalizedSearch);
+
+    if (!matchesSearch) return false;
     if (activeTab === "all") return true;
     if (activeTab === "reviewed") return false;
     return submission.status === activeTab;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const paginated = filtered.slice(pageStart, pageStart + pageSize);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   const count = (status: Status) =>
     submissions.filter((submission) => submission.status === status).length;
@@ -104,6 +128,15 @@ export default function CodeReviewsPage() {
     setSelected(null);
   };
 
+  const updateReviewNotes = (id: number, reviewNotes: string) => {
+    setSubmissions((prev) =>
+      prev.map((submission) =>
+        submission.id === id ? { ...submission, reviewNotes } : submission
+      )
+    );
+    setSelected((prev) => (prev ? { ...prev, reviewNotes } : prev));
+  };
+
   const tabs: { key: TabKey; label: string }[] = [
     { key: "all", label: `All (${submissions.length})` },
     { key: "pending", label: `Pending (${count("pending")})` },
@@ -114,7 +147,7 @@ export default function CodeReviewsPage() {
   ];
 
   return (
-    <div className="min-h-screen overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+    <div className="h-screen overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50">
       {/* HEADER */}
       <div className="border-b border-zinc-200 bg-white px-8 py-5">
         <div className="flex items-center gap-4">
@@ -143,24 +176,57 @@ export default function CodeReviewsPage() {
 
       {/* FILTERS */}
       <div className="px-8 pt-11">
-        <div className="flex flex-wrap gap-x-10 gap-y-3 border-b border-zinc-200 pb-3 text-sm font-semibold text-zinc-950">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`transition-colors ${
-                activeTab === tab.key ? "text-zinc-950" : "hover:text-zinc-600"
-              }`}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-3">
+          <div className="flex flex-wrap gap-x-10 gap-y-3 text-sm font-semibold text-zinc-950">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setPage(1);
+                }}
+                className={`transition-colors ${
+                  activeTab === tab.key ? "text-zinc-950" : "hover:text-zinc-600"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <label className="relative w-full max-w-xs">
+            <span className="sr-only">Search submissions</span>
+            <svg
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              {tab.label}
-            </button>
-          ))}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
+              />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setPage(1);
+              }}
+              type="search"
+              placeholder="Search reviews..."
+              className="h-10 w-full rounded-lg border border-zinc-200 bg-white pl-10 pr-4 text-sm font-normal text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            />
+          </label>
         </div>
       </div>
 
       {/* LIST */}
       <main className="space-y-4 px-8 py-6">
-        {filtered.map((item) => (
+        {paginated.map((item) => (
           <div
             key={item.id}
             className="flex items-start justify-between gap-6 rounded-lg border border-zinc-200 bg-white px-6 py-6"
@@ -222,12 +288,56 @@ export default function CodeReviewsPage() {
             </button>
           </div>
         ))}
+
+        {filtered.length === 0 && (
+          <div className="rounded-lg border border-dashed border-zinc-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
+            No submissions match your current filters.
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-end gap-4 border-t border-zinc-200 pt-5">
+          <nav
+            className="flex items-center gap-2"
+            aria-label="Reviews pagination"
+          >
+            <button
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-white"
+            >
+              Previous
+            </button>
+
+            {pageNumbers.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
+                aria-current={currentPage === pageNumber ? "page" : undefined}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
+                  currentPage === pageNumber
+                    ? "border-emerald-500 bg-emerald-500 text-white"
+                    : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-100"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-white"
+            >
+              Next
+            </button>
+          </nav>
+        </div>
       </main>
 
       {/* MODAL */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-6">
-          <div className="max-h-[90vh] w-full max-w-[1152px] overflow-hidden rounded-lg bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 px-6 py-8">
+          <div className="mx-auto max-h-[calc(100vh-4rem)] w-full max-w-[1152px] overflow-y-auto rounded-lg bg-white shadow-2xl">
             <div className="flex items-start justify-between px-6 py-7">
               <div>
                 <h2 className="text-2xl font-bold leading-tight text-zinc-950">
@@ -244,8 +354,8 @@ export default function CodeReviewsPage() {
               </button>
             </div>
 
-            <div className="grid max-h-[248px] grid-cols-[256px_1fr] overflow-hidden border-y border-zinc-200">
-              <aside className="overflow-y-auto border-r border-zinc-200 bg-white p-4">
+            <div className="grid h-[248px] grid-cols-[256px_1fr] overflow-hidden border-y border-zinc-200">
+              <aside className="h-full overflow-y-auto border-r border-zinc-200 bg-white p-4">
                 <h3 className="mb-3 text-lg font-bold text-zinc-950">Answers</h3>
                 <div className="space-y-2">
                   {questions.map((question, index) => (
@@ -267,7 +377,7 @@ export default function CodeReviewsPage() {
                 </div>
               </aside>
 
-              <section className="overflow-y-auto bg-white pt-7">
+              <section className="h-full overflow-y-auto bg-white pt-7">
                 <div className="px-6">
                   <h3 className="text-xl font-bold text-zinc-950">
                     {questions[activeQuestion].heading}
@@ -280,30 +390,24 @@ export default function CodeReviewsPage() {
                   </div>
                 </div>
 
-                <pre className="mt-2 min-h-[174px] overflow-auto bg-[#1e1e1e] px-8 py-0 text-sm leading-6 text-white">
-                  <code>
-                    {questions[activeQuestion].code
-                      .split("\n")
-                      .map((line, index) => (
-                        <span key={`${line}-${index}`} className="block">
-                          <span className="mr-6 inline-block w-3 select-none text-right text-slate-400">
-                            {index + 1}
-                          </span>
-                          <span
-                            className={
-                              line.trim().startsWith("//")
-                                ? "text-green-500"
-                                : index === 0
-                                  ? "text-sky-300"
-                                  : "text-white"
-                            }
-                          >
-                            {line || " "}
-                          </span>
-                        </span>
-                      ))}
-                  </code>
-                </pre>
+                <div className="mt-2 flex min-h-[174px] overflow-hidden bg-[#1e1e1e] text-sm leading-6 text-white">
+                  <div className="select-none border-r border-white/10 px-4 py-1 text-right text-slate-400">
+                    {activeAnswerLines.map((_, index) => (
+                      <div key={index}>{index + 1}</div>
+                    ))}
+                  </div>
+                  <textarea
+                    value={answers[activeQuestion]}
+                    onChange={(event) => {
+                      const nextAnswers = [...answers];
+                      nextAnswers[activeQuestion] = event.target.value;
+                      setAnswers(nextAnswers);
+                    }}
+                    spellCheck={false}
+                    className="min-h-[174px] flex-1 resize-none overflow-auto bg-[#1e1e1e] px-4 py-1 font-mono text-sm leading-6 text-white outline-none"
+                    aria-label={`${questions[activeQuestion].title} answer`}
+                  />
+                </div>
               </section>
             </div>
 
@@ -320,7 +424,10 @@ export default function CodeReviewsPage() {
               <label className="text-sm font-medium text-slate-900">
                 Review Notes - Optional
                 <textarea
-                  defaultValue={selected.reviewNotes ?? ""}
+                  value={selected.reviewNotes ?? ""}
+                  onChange={(event) =>
+                    updateReviewNotes(selected.id, event.target.value)
+                  }
                   className="mt-2 h-11 w-full resize-none rounded-lg border border-emerald-500 px-4 py-3 text-sm outline-none ring-1 ring-emerald-500"
                 />
               </label>
