@@ -172,23 +172,23 @@ export default function CodeReviewsPage() {
   };
 
   return (
-    <div className="h-screen overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-zinc-50">
       {/* HEADER */}
-      <div className="border-b border-zinc-200 bg-white px-8 py-5">
+      <div className="border-b border-zinc-200 bg-white px-4 py-5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/admin")}
-            className="text-2xl leading-none text-zinc-950 transition-colors hover:text-zinc-600"
+            className="shrink-0 text-2xl leading-none text-zinc-950 transition-colors hover:text-zinc-600"
             aria-label="Back to admin"
           >
             &larr;
           </button>
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 text-lg font-bold text-white">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-lg font-bold text-white">
             {"</>"}
           </div>
 
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold leading-tight text-zinc-950">
               Code Reviews
             </h1>
@@ -200,9 +200,10 @@ export default function CodeReviewsPage() {
       </div>
 
       {/* FILTERS */}
-      <div className="px-8 pt-11">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-3">
-          <div className="flex flex-wrap gap-x-10 gap-y-3 text-sm font-semibold text-zinc-950">
+      <div className="px-4 pt-8 sm:px-6 sm:pt-10 lg:px-8">
+        <div className="flex flex-col gap-4 border-b border-zinc-200 pb-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0">
+            <div className="flex min-w-max gap-x-6 gap-y-3 text-sm font-semibold text-zinc-950 lg:min-w-0 lg:flex-wrap lg:gap-x-10">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -210,16 +211,17 @@ export default function CodeReviewsPage() {
                   setActiveTab(tab.key);
                   setPage(1);
                 }}
-                className={`transition-colors ${
+                className={`whitespace-nowrap transition-colors ${
                   activeTab === tab.key ? "text-zinc-950" : "hover:text-zinc-600"
                 }`}
               >
                 {tab.label}
               </button>
             ))}
+            </div>
           </div>
 
-          <label className="relative w-full max-w-xs">
+          <label className="relative w-full lg:max-w-xs">
             <span className="sr-only">Search submissions</span>
             <svg
               aria-hidden="true"
@@ -250,15 +252,15 @@ export default function CodeReviewsPage() {
       </div>
 
       {/* LIST */}
-      <main className="space-y-4 px-8 py-6">
+      <main className="flex-1 space-y-4 px-4 py-6 sm:px-6 lg:px-8">
         {paginated.map((item) => (
           <div
             key={item.id}
-            className="flex items-start justify-between gap-6 rounded-lg border border-zinc-200 bg-white px-6 py-6"
+            className="flex flex-col gap-5 rounded-lg border border-zinc-200 bg-white px-4 py-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:px-6 sm:py-6"
           >
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3">
-                <span className="text-base font-bold text-zinc-950">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="break-words text-base font-bold text-zinc-950">
                   {renderHighlightedName(item.name)}
                 </span>
                 <span
@@ -272,7 +274,7 @@ export default function CodeReviewsPage() {
 
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-700">
                 <span>Questions: {item.questions}</span>
-                <span>Submitted: {item.date}</span>
+                <span className="break-words">Submitted: {item.date}</span>
               </div>
 
               {item.reviewNotes && (
@@ -288,7 +290,7 @@ export default function CodeReviewsPage() {
                 setSelected(item);
                 setActiveQuestion(0);
               }}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-600"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-600 sm:w-auto"
             >
               <svg
                 aria-hidden="true"
@@ -320,9 +322,9 @@ export default function CodeReviewsPage() {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-end gap-4 border-t border-zinc-200 pt-5">
+        <div className="flex flex-wrap items-center justify-center gap-4 border-t border-zinc-200 pt-5 sm:justify-end">
           <nav
-            className="flex items-center gap-2"
+            className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto"
             aria-label="Reviews pagination"
           >
             <button
@@ -361,28 +363,30 @@ export default function CodeReviewsPage() {
 
       {/* MODAL */}
       {selected && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 px-6 py-8">
-          <div className="mx-auto max-h-[calc(100vh-4rem)] w-full max-w-[1152px] overflow-y-auto rounded-lg bg-white shadow-2xl">
-            <div className="flex items-start justify-between px-6 py-7">
-              <div>
-                <h2 className="text-2xl font-bold leading-tight text-zinc-950">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 px-3 py-3 sm:px-6 sm:py-8">
+          <div className="mx-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-[1152px] overflow-y-auto rounded-lg bg-white shadow-2xl sm:max-h-[calc(100dvh-4rem)]">
+            <div className="flex items-start justify-between gap-4 px-4 py-5 sm:px-6 sm:py-7">
+              <div className="min-w-0">
+                <h2 className="break-words text-xl font-bold leading-tight text-zinc-950 sm:text-2xl">
                   {selected.name.toLowerCase()}
                 </h2>
-                <p className="mt-2 text-sm text-slate-700">{selected.title}</p>
+                <p className="mt-2 break-words text-sm text-slate-700">
+                  {selected.title}
+                </p>
               </div>
               <button
                 onClick={() => setSelected(null)}
-                className="text-3xl leading-none text-slate-400 hover:text-slate-600"
+                className="shrink-0 text-3xl leading-none text-slate-400 hover:text-slate-600"
                 aria-label="Close review modal"
               >
                 &times;
               </button>
             </div>
 
-            <div className="grid h-[248px] grid-cols-[256px_1fr] overflow-hidden border-y border-zinc-200">
-              <aside className="h-full overflow-y-auto border-r border-zinc-200 bg-white p-4">
+            <div className="grid border-y border-zinc-200 md:h-[248px] md:grid-cols-[220px_1fr] lg:grid-cols-[256px_1fr]">
+              <aside className="max-h-56 overflow-y-auto border-b border-zinc-200 bg-white p-4 md:h-full md:max-h-none md:border-b-0 md:border-r">
                 <h3 className="mb-3 text-lg font-bold text-zinc-950">Answers</h3>
-                <div className="space-y-2">
+                <div className="grid gap-2 sm:grid-cols-3 md:block md:space-y-2">
                   {questions.map((question, index) => (
                     <button
                       key={question.title}
@@ -402,9 +406,9 @@ export default function CodeReviewsPage() {
                 </div>
               </aside>
 
-              <section className="h-full overflow-y-auto bg-white pt-7">
-                <div className="px-6">
-                  <h3 className="text-xl font-bold text-zinc-950">
+              <section className="min-w-0 overflow-y-auto bg-white pt-5 md:h-full md:pt-7">
+                <div className="px-4 sm:px-6">
+                  <h3 className="break-words text-lg font-bold text-zinc-950 sm:text-xl">
                     {questions[activeQuestion].heading}
                   </h3>
                   <div className="mt-3 flex items-center gap-3 text-sm text-slate-600">
@@ -415,8 +419,8 @@ export default function CodeReviewsPage() {
                   </div>
                 </div>
 
-                <div className="mt-2 flex min-h-[174px] overflow-hidden bg-[#1e1e1e] text-sm leading-6 text-white">
-                  <div className="select-none border-r border-white/10 px-4 py-1 text-right text-slate-400">
+                <div className="mt-2 flex min-h-[174px] overflow-x-auto bg-[#1e1e1e] text-sm leading-6 text-white">
+                  <div className="shrink-0 select-none border-r border-white/10 px-3 py-1 text-right text-slate-400 sm:px-4">
                     {activeAnswerLines.map((_, index) => (
                       <div key={index}>{index + 1}</div>
                     ))}
@@ -429,14 +433,14 @@ export default function CodeReviewsPage() {
                       setAnswers(nextAnswers);
                     }}
                     spellCheck={false}
-                    className="min-h-[174px] flex-1 resize-none overflow-auto bg-[#1e1e1e] px-4 py-1 font-mono text-sm leading-6 text-white outline-none"
+                    className="min-h-[174px] min-w-[28rem] flex-1 resize-none overflow-auto bg-[#1e1e1e] px-4 py-1 font-mono text-sm leading-6 text-white outline-none"
                     aria-label={`${questions[activeQuestion].title} answer`}
                   />
                 </div>
               </section>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 px-6 py-7">
+            <div className="grid gap-5 px-4 py-5 sm:px-6 sm:py-7 md:grid-cols-2 md:gap-6">
               <label className="text-sm font-medium text-slate-900">
                 Score (%) - Optional
                 <input
@@ -458,15 +462,15 @@ export default function CodeReviewsPage() {
               </label>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-50 px-6 pb-6">
+            <div className="flex flex-col gap-4 bg-zinc-50 px-4 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-center lg:justify-between">
               <p className="text-sm text-slate-700">
                 Question {activeQuestion + 1} of {questions.length}
               </p>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <button
                   onClick={() => updateStatus(selected.id, "failed")}
-                  className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-3 font-bold text-white hover:bg-red-600"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 font-bold text-white hover:bg-red-600 sm:w-auto"
                 >
                   <span className="flex h-4 w-4 items-center justify-center rounded-full border border-white text-xs">
                     x
@@ -476,7 +480,7 @@ export default function CodeReviewsPage() {
 
                 <button
                   onClick={() => updateStatus(selected.id, "passed")}
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 font-bold text-white hover:bg-emerald-600"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 font-bold text-white hover:bg-emerald-600 sm:w-auto"
                 >
                   <svg
                     aria-hidden="true"
@@ -502,7 +506,7 @@ export default function CodeReviewsPage() {
 
                 <button
                   onClick={() => updateStatus(selected.id, "interview")}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-bold text-white hover:bg-blue-700"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-bold text-white hover:bg-blue-700 sm:w-auto"
                 >
                   <svg
                     aria-hidden="true"
