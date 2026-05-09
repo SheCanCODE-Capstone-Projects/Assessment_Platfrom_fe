@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Footer from "@/src/components/layout/Footer";
 
 type Status = "pending" | "passed" | "failed" | "interview";
 type TabKey = "all" | "reviewed" | Status;
@@ -146,6 +147,30 @@ export default function CodeReviewsPage() {
     { key: "interview", label: `Interview (${count("interview")})` },
   ];
 
+  const renderHighlightedName = (name: string) => {
+    const displayName = name.toLowerCase();
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    if (!normalizedSearch) return displayName;
+
+    const matchIndex = displayName.indexOf(normalizedSearch);
+    if (matchIndex === -1) return displayName;
+
+    const beforeMatch = displayName.slice(0, matchIndex);
+    const match = displayName.slice(matchIndex, matchIndex + normalizedSearch.length);
+    const afterMatch = displayName.slice(matchIndex + normalizedSearch.length);
+
+    return (
+      <>
+        {beforeMatch}
+        <mark className="rounded bg-yellow-200 px-0.5 text-zinc-950">
+          {match}
+        </mark>
+        {afterMatch}
+      </>
+    );
+  };
+
   return (
     <div className="h-screen overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50">
       {/* HEADER */}
@@ -234,7 +259,7 @@ export default function CodeReviewsPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-3">
                 <span className="text-base font-bold text-zinc-950">
-                  {item.name.toLowerCase()}
+                  {renderHighlightedName(item.name)}
                 </span>
                 <span
                   className={`rounded-full px-3 py-1 text-xs ${statusStyles[item.status]}`}
@@ -515,6 +540,8 @@ export default function CodeReviewsPage() {
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
   );
 }
