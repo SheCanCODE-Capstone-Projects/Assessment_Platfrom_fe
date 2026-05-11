@@ -22,6 +22,7 @@ const INITIAL_SESSION: CandidateSession = {
 };
 
 const ASSESSMENT_STARTED_AT_KEY = "assessmentStartedAt";
+const PASS_MARK = 70;
 
 type AssessmentCameraWindow = Window & {
   __assessmentCameraStream?: MediaStream;
@@ -237,7 +238,7 @@ export default function InstructionsPage() {
                   <span className="font-semibold text-slate-900">
                     Pass Mark:
                   </span>{" "}
-                  You need to score at least 70% to pass this assessment.
+                  You need to score at least {PASS_MARK}% to pass this assessment.
                 </p>
               </div>
             </div>

@@ -23,6 +23,7 @@ const LANGUAGE_OPTIONS = [
   "C#",
   "PHP",
 ] as const;
+const PASS_MARK = 70;
 
 type FormValues = {
   fullName: string;
@@ -91,6 +92,90 @@ function inputClasses(hasError: boolean) {
       ? "border-red-300 focus:border-red-400 focus:ring-red-500/10"
       : "border-zinc-300 focus:border-emerald-500 focus:ring-emerald-500/10",
   ].join(" ");
+}
+
+function LanguageSelect({
+  value,
+  error,
+  onChange,
+}: {
+  value: string;
+  error: string;
+  onChange: (value: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedLabel = value || "Select a programming language";
+
+  function toggleMenu() {
+    setIsOpen((current) => !current);
+  }
+
+  return (
+    <div className="relative">
+      <button
+        id="preferredLanguage"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={toggleMenu}
+        onBlur={() => window.setTimeout(() => setIsOpen(false), 100)}
+        className={[
+          inputClasses(Boolean(error)),
+          "flex min-w-0 items-center justify-between gap-3 pr-4 text-left",
+        ].join(" ")}
+      >
+        <span className="min-w-0 truncate">{selectedLabel}</span>
+        <svg
+          viewBox="0 0 20 20"
+          className={[
+            "h-4 w-4 shrink-0 text-slate-400 transition-transform",
+            isOpen ? "rotate-180" : "",
+          ].join(" ")}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          aria-hidden="true"
+        >
+          <path d="m5 7.5 5 5 5-5" />
+        </svg>
+      </button>
+
+      {isOpen ? (
+        <div
+          role="listbox"
+          aria-labelledby="preferredLanguage"
+          className="absolute bottom-full z-20 mb-1 w-full overflow-hidden rounded-lg border border-emerald-500 bg-white shadow-lg"
+        >
+          <div className="max-h-[280px] overflow-y-auto py-1">
+          {LANGUAGE_OPTIONS.map((language) => {
+            const selected = value === language;
+            return (
+              <button
+                key={language}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  onChange(language);
+                  setIsOpen(false);
+                }}
+                className={[
+                  "block w-full px-4 py-2 text-left text-base transition-colors",
+                  selected
+                    ? "bg-emerald-600 text-white"
+                    : "text-slate-900 hover:bg-emerald-600 hover:text-white",
+                ].join(" ")}
+              >
+                {language}
+              </button>
+            );
+          })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 const STEPS = ["Assessment Details", "Personal Information"] as const;
@@ -211,11 +296,19 @@ export default function CandidateRegisterPage() {
     return "";
   }
 
-  function handleChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
     const fieldName = name as keyof FormValues;
     setFormValues((c) => ({ ...c, [fieldName]: value }));
     setErrors((c) => ({ ...c, [fieldName]: validateField(fieldName, value) }));
+  }
+
+  function handleLanguageChange(value: string) {
+    setFormValues((c) => ({ ...c, preferredLanguage: value }));
+    setErrors((c) => ({
+      ...c,
+      preferredLanguage: validateField("preferredLanguage", value),
+    }));
   }
 
   function handleNextStep() {
@@ -265,8 +358,8 @@ export default function CandidateRegisterPage() {
         <SuccessToast message="Information saved successfully!" />
       )}
 
-      <main className="px-4 py-10 sm:px-6 sm:py-14">
-        <section className="mx-auto w-full max-w-[610px] rounded-xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10">
+      <main className="px-3 py-6 sm:px-6 sm:py-14">
+        <section className="mx-auto w-full max-w-[610px] rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-10">
 
           <StepIndicator current={step} />
 
@@ -289,7 +382,7 @@ export default function CandidateRegisterPage() {
                 <ul className="mt-3 space-y-2 text-[14px] leading-7 text-slate-800">
                   <li>&bull; Duration: 60 minutes</li>
                   <li>&bull; Number of Questions: 3</li>
-                  <li>&bull; Pass Mark: 70%</li>
+                  <li>&bull; Pass Mark: {PASS_MARK}%</li>
                 </ul>
               </section>
 
@@ -302,7 +395,7 @@ export default function CandidateRegisterPage() {
                 </p>
 
                 {photoPreview ? (
-                  <div className="flex items-start gap-4 rounded-lg border border-emerald-200 bg-emerald-50/40 p-4">
+                  <div className="flex flex-col gap-4 rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 sm:flex-row sm:items-start">
                     <Image
                       src={photoPreview}
                       alt="ID preview"
@@ -459,31 +552,15 @@ export default function CandidateRegisterPage() {
                   label="Preferred Programming Language *"
                   error={errors.preferredLanguage}
                 >
-                  <div className="relative">
-                    <select
-                      id="preferredLanguage"
-                      name="preferredLanguage"
-                      value={formValues.preferredLanguage}
-                      onChange={handleChange}
-                      className={[inputClasses(Boolean(errors.preferredLanguage)), "appearance-none pr-10"].join(" ")}
-                    >
-                      <option value="">Select a programming language</option>
-                      {LANGUAGE_OPTIONS.map((language) => (
-                        <option key={language} value={language}>
-                          {language}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
-                      <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-                        <path d="m5 7.5 5 5 5-5" />
-                      </svg>
-                    </span>
-                  </div>
+                  <LanguageSelect
+                    value={formValues.preferredLanguage}
+                    error={errors.preferredLanguage}
+                    onChange={handleLanguageChange}
+                  />
                 </FormField>
               </div>
 
-              <div className="mt-8 flex gap-3">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button
                   type="button"
                   tone="zinc"
