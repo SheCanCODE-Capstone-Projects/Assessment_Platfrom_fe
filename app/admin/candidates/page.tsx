@@ -1,6 +1,5 @@
  "use client";
 
-import Footer from "@/components/layout/Footer";
 import { useRouter } from "next/navigation";
 
 
@@ -50,15 +49,15 @@ function PeopleIcon() {
 
 export default function CandidatesPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="flex flex-1 flex-col bg-zinc-50">
       <div className="w-full bg-white">
-        <div className="mx-auto flex h-14 max-w-6xl items-center px-6">
+        <div className="mx-auto flex h-14 max-w-6xl items-center px-4 sm:px-6">
           <BackButton />
           <div className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded bg-emerald-600 text-white">
             <PeopleIcon />
           </div>
-          <div className="ml-3">
-            <div className="text-sm font-semibold text-zinc-900">
+          <div className="ml-3 min-w-0">
+            <div className="truncate text-sm font-semibold text-zinc-900">
               Candidate Management
             </div>
             <div className="text-xs text-zinc-500">0 candidates</div>
@@ -67,8 +66,8 @@ export default function CandidatesPage() {
         <div className="h-px w-full bg-zinc-200/70" />
       </div>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
-        <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="text-sm font-semibold text-zinc-900">
             How to Assign Candidates
           </div>
@@ -79,17 +78,17 @@ export default function CandidatesPage() {
 
           <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-[11px] text-emerald-900">
             <div className="font-medium">Example:</div>
-            <div className="mt-1">
+            <div className="mt-1 break-all">
               https://fg.story_16809212.figma.site/candidate/exam
             </div>
             <div className="mt-2 text-emerald-800/90">
-              When candidates click this link, they’ll fill out their
+              When candidates click this link, they&apos;ll fill out their
               information and start the assessment.
             </div>
           </div>
         </section>
 
-        <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-10 text-center shadow-sm">
+        <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-10">
           <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-zinc-50 text-zinc-500">
             <svg
               viewBox="0 0 24 24"
@@ -113,8 +112,6 @@ export default function CandidatesPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }
-

@@ -2,23 +2,37 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import ExamCard, { type ExamCardData, type ExamStatus } from "@/components/cards/ExamCard";
-import CreateExamModal, { type CreateExamPayload } from "@/components/modals/CreateExamModal";
+import ExamCard, {
+  type ExamCardData,
+  type ExamStatus,
+} from "@/components/cards/ExamCard";
+import CreateExamModal, {
+  type CreateExamPayload,
+} from "@/components/modals/CreateExamModal";
 import AssignQuestionModal, {
   QUESTION_BANK,
   type AssignQuestionPayload,
 } from "@/components/modals/AssignQuestionModal";
-import Footer from "@/components/layout/Footer";
-import { greenSelectClassName, greenSelectOptionClassName } from "@/components/ui/selectStyles";
 
 type StatusFilter = "all" | ExamStatus;
 type ConfirmAction =
   | { type: "delete"; examId: string; examTitle: string }
-  | { type: "status"; examId: string; examTitle: string; nextStatus: ExamStatus };
+  | {
+      type: "status";
+      examId: string;
+      examTitle: string;
+      nextStatus: ExamStatus;
+    };
 
 function ArrowLeftIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M15 18l-6-6 6-6" />
     </svg>
   );
@@ -26,7 +40,13 @@ function ArrowLeftIcon() {
 
 function ClipboardIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M8 6H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2" />
       <rect x="8" y="2" width="8" height="4" rx="1" />
     </svg>
@@ -46,7 +66,7 @@ function AdminHeader({
 
   return (
     <div className="w-full border-b border-zinc-200 bg-white">
-      <div className="mx-auto flex min-h-14 max-w-6xl items-center justify-between gap-4 px-6 py-2">
+      <div className="mx-auto flex min-h-14 max-w-6xl items-center justify-between gap-4 px-4 py-2 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -62,7 +82,9 @@ function AdminHeader({
           </div>
 
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-zinc-900">{title}</div>
+            <div className="truncate text-sm font-semibold text-zinc-900">
+              {title}
+            </div>
             <div className="text-xs text-zinc-500">{subtitle}</div>
           </div>
         </div>
@@ -145,19 +167,33 @@ const INITIAL_EXAM_QUESTION_IDS: Record<string, string[]> = {
 
 const PAGE_SIZE = 4;
 const EXAMS_STORAGE_KEY = "assessment-platform.admin.exams";
-const EXAM_QUESTION_IDS_STORAGE_KEY = "assessment-platform.admin.examQuestionIds";
+const EXAM_QUESTION_IDS_STORAGE_KEY =
+  "assessment-platform.admin.examQuestionIds";
+const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
+  all: "All status",
+  ACTIVE: "Active",
+  INACTIVE: "Inactive",
+};
 
 function readStoredExams() {
   try {
     const storedExams = window.localStorage.getItem(EXAMS_STORAGE_KEY);
-    const storedQuestionIds = window.localStorage.getItem(EXAM_QUESTION_IDS_STORAGE_KEY);
+    const storedQuestionIds = window.localStorage.getItem(
+      EXAM_QUESTION_IDS_STORAGE_KEY,
+    );
     const parsedExams = storedExams ? JSON.parse(storedExams) : null;
-    const parsedQuestionIds = storedQuestionIds ? JSON.parse(storedQuestionIds) : null;
+    const parsedQuestionIds = storedQuestionIds
+      ? JSON.parse(storedQuestionIds)
+      : null;
 
     return {
-      exams: Array.isArray(parsedExams) ? (parsedExams as ExamCardData[]) : INITIAL_EXAMS,
+      exams: Array.isArray(parsedExams)
+        ? (parsedExams as ExamCardData[])
+        : INITIAL_EXAMS,
       examQuestionIds:
-        parsedQuestionIds && typeof parsedQuestionIds === "object" && !Array.isArray(parsedQuestionIds)
+        parsedQuestionIds &&
+        typeof parsedQuestionIds === "object" &&
+        !Array.isArray(parsedQuestionIds)
           ? (parsedQuestionIds as Record<string, string[]>)
           : INITIAL_EXAM_QUESTION_IDS,
     };
@@ -174,33 +210,46 @@ export default function ExamManagementPage() {
   const [editingExamId, setEditingExamId] = useState<string | null>(null);
   const [assignExamId, setAssignExamId] = useState<string | null>(null);
   const [exams, setExams] = useState<ExamCardData[]>(INITIAL_EXAMS);
-  const [examQuestionIds, setExamQuestionIds] = useState<Record<string, string[]>>(INITIAL_EXAM_QUESTION_IDS);
-  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  const [examQuestionIds, setExamQuestionIds] = useState<
+    Record<string, string[]>
+  >(INITIAL_EXAM_QUESTION_IDS);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(
+    null,
+  );
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [storageReady, setStorageReady] = useState(false);
 
   useEffect(() => {
-    const storedState = readStoredExams();
+    const timeoutId = window.setTimeout(() => {
+      const storedState = readStoredExams();
 
-    setExams(storedState.exams);
-    setExamQuestionIds(storedState.examQuestionIds);
-    setStorageReady(true);
+      setExams(storedState.exams);
+      setExamQuestionIds(storedState.examQuestionIds);
+      setStorageReady(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
     if (!storageReady) return;
 
     window.localStorage.setItem(EXAMS_STORAGE_KEY, JSON.stringify(exams));
-    window.localStorage.setItem(EXAM_QUESTION_IDS_STORAGE_KEY, JSON.stringify(examQuestionIds));
+    window.localStorage.setItem(
+      EXAM_QUESTION_IDS_STORAGE_KEY,
+      JSON.stringify(examQuestionIds),
+    );
   }, [examQuestionIds, exams, storageReady]);
 
   const filteredExams = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return exams.filter((exam) => {
-      const matchesStatus = statusFilter === "all" || exam.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || exam.status === statusFilter;
       const matchesSearch =
         normalizedSearch.length === 0 ||
         exam.title.toLowerCase().includes(normalizedSearch) ||
@@ -222,6 +271,7 @@ export default function ExamManagementPage() {
 
   const changeStatusFilter = (nextFilter: StatusFilter) => {
     setStatusFilter(nextFilter);
+    setStatusDropdownOpen(false);
     setPage(1);
   };
 
@@ -229,7 +279,7 @@ export default function ExamManagementPage() {
     const id = String(Date.now());
     const selectedQuestionIds = payload.selectedQuestionIds ?? [];
     const selectedQuestions = QUESTION_BANK.filter((question) =>
-      selectedQuestionIds.includes(question.id)
+      selectedQuestionIds.includes(question.id),
     );
 
     setExams((prev) => [
@@ -241,7 +291,10 @@ export default function ExamManagementPage() {
         timeUnit: payload.timeUnit,
         passMark: payload.passMark,
         questions: selectedQuestions.length,
-        totalMarks: selectedQuestions.reduce((total, question) => total + question.marks, 0),
+        totalMarks: selectedQuestions.reduce(
+          (total, question) => total + question.marks,
+          0,
+        ),
         link: `https://codeassess.com/exam/${id}`,
         status: payload.status,
       },
@@ -258,7 +311,9 @@ export default function ExamManagementPage() {
   const handleUpdateExam = (payload: CreateExamPayload) => {
     if (!editingExamId) return;
     const selectedQuestions = payload.selectedQuestionIds
-      ? QUESTION_BANK.filter((question) => payload.selectedQuestionIds?.includes(question.id))
+      ? QUESTION_BANK.filter((question) =>
+          payload.selectedQuestionIds?.includes(question.id),
+        )
       : null;
 
     setExams((prev) =>
@@ -272,13 +327,18 @@ export default function ExamManagementPage() {
               timeUnit: payload.timeUnit,
               passMark: payload.passMark,
               status: payload.status,
-              questions: selectedQuestions ? selectedQuestions.length : exam.questions,
+              questions: selectedQuestions
+                ? selectedQuestions.length
+                : exam.questions,
               totalMarks: selectedQuestions
-                ? selectedQuestions.reduce((total, question) => total + question.marks, 0)
+                ? selectedQuestions.reduce(
+                    (total, question) => total + question.marks,
+                    0,
+                  )
                 : exam.totalMarks,
             }
-          : exam
-      )
+          : exam,
+      ),
     );
     if (payload.selectedQuestionIds) {
       setExamQuestionIds((prev) => ({
@@ -304,9 +364,12 @@ export default function ExamManagementPage() {
     setExams((prev) =>
       prev.map((exam) =>
         exam.id === examId
-          ? { ...exam, status: exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }
-          : exam
-      )
+          ? {
+              ...exam,
+              status: exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+            }
+          : exam,
+      ),
     );
   };
 
@@ -326,7 +389,9 @@ export default function ExamManagementPage() {
     if (!assignExamId) return;
 
     const assignedIds = new Set(examQuestionIds[assignExamId] ?? []);
-    const newQuestions = payload.questions.filter((question) => !assignedIds.has(question.id));
+    const newQuestions = payload.questions.filter(
+      (question) => !assignedIds.has(question.id),
+    );
 
     if (newQuestions.length === 0) return;
 
@@ -338,10 +403,13 @@ export default function ExamManagementPage() {
               questions: exam.questions + newQuestions.length,
               totalMarks:
                 exam.totalMarks +
-                newQuestions.reduce((total, question) => total + question.marks, 0),
+                newQuestions.reduce(
+                  (total, question) => total + question.marks,
+                  0,
+                ),
             }
-          : exam
-      )
+          : exam,
+      ),
     );
     setExamQuestionIds((prev) => ({
       ...prev,
@@ -353,42 +421,91 @@ export default function ExamManagementPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
+    <div className="flex flex-1 flex-col bg-zinc-50">
       <AdminHeader
         title="Exam Management"
         subtitle={`${exams.length} exam${exams.length !== 1 ? "s" : ""}`}
       />
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
         <section className="mb-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
               <div>
                 <div className="text-xs text-zinc-500">All Exams</div>
-                <div className="mt-1 font-semibold text-zinc-900">{exams.length}</div>
+                <div className="mt-1 font-semibold text-blue-600">
+                  {exams.length}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500">Active</div>
-                <div className="mt-1 font-semibold text-emerald-500">{activeCount}</div>
+                <div className="mt-1 font-semibold text-emerald-600">
+                  {activeCount}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-zinc-500">Inactive</div>
-                <div className="mt-1 font-semibold text-zinc-700">{inactiveCount}</div>
+                <div className="mt-1 font-semibold text-orange-600">
+                  {inactiveCount}
+                </div>
               </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <label className="flex items-center gap-2 text-sm text-zinc-600">
+              <label className="relative flex flex-col gap-1.5 text-sm text-zinc-600 sm:flex-row sm:items-center sm:gap-2">
                 Status
-                <select
-                  value={statusFilter}
-                  onChange={(event) => changeStatusFilter(event.target.value as StatusFilter)}
-                  className={`h-9 px-3 ${greenSelectClassName}`}
+                <div
+                  className="relative w-full sm:w-40"
+                  onBlur={(event) => {
+                    const nextFocus = event.relatedTarget as Node | null;
+
+                    if (!nextFocus || !event.currentTarget.contains(nextFocus)) {
+                      setStatusDropdownOpen(false);
+                    }
+                  }}
                 >
-                  <option className={greenSelectOptionClassName} value="all">All status</option>
-                  <option className={greenSelectOptionClassName} value="ACTIVE">Active</option>
-                  <option className={greenSelectOptionClassName} value="INACTIVE">Inactive</option>
-                </select>
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={statusDropdownOpen}
+                    onClick={() => setStatusDropdownOpen((isOpen) => !isOpen)}
+                    className="flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-emerald-700 bg-white px-3 text-emerald-700"
+                  >
+                    {STATUS_FILTER_LABELS[statusFilter]}
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 20 20"
+                      className="h-4 w-4 text-zinc-500"
+                      fill="currentColor"
+                    >
+                      <path d="M5.5 7.5h9L10 13l-4.5-5.5Z" />
+                    </svg>
+                  </button>
+
+                  {statusDropdownOpen && (
+                    <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
+                      <div role="listbox" aria-label="Status filter">
+                        {(Object.keys(STATUS_FILTER_LABELS) as StatusFilter[]).map(
+                          (filter) => (
+                            <button
+                              key={filter}
+                              type="button"
+                              role="option"
+                              aria-selected={filter === statusFilter}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => {
+                                changeStatusFilter(filter);
+                              }}
+                              className="block w-full cursor-pointer px-3 py-2 text-left text-zinc-700 hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white focus:outline-none"
+                            >
+                              {STATUS_FILTER_LABELS[filter]}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </label>
             </div>
           </div>
@@ -396,7 +513,7 @@ export default function ExamManagementPage() {
 
         <section className="mb-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <label className="flex-1 text-sm text-zinc-600">
+            <label className="w-full text-sm text-zinc-600 md:max-w-md">
               Search exams
               <input
                 type="search"
@@ -406,14 +523,14 @@ export default function ExamManagementPage() {
                   setPage(1);
                 }}
                 placeholder="Search by title, description, or link"
-                className="mt-1.5 h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none transition placeholder-zinc-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
+                className="mt-1.5 h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none transition placeholder-zinc-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
               />
             </label>
 
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 md:mt-6"
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 md:mt-6 md:w-auto"
             >
               + Create Exam
             </button>
@@ -447,7 +564,8 @@ export default function ExamManagementPage() {
                     type: "status",
                     examId: exam.id,
                     examTitle: exam.title,
-                    nextStatus: exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+                    nextStatus:
+                      exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
                   });
                 }}
               />
@@ -464,10 +582,11 @@ export default function ExamManagementPage() {
         <section className="mt-5 flex flex-col gap-3 border-t border-zinc-200 pt-4 text-sm text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
             Showing {filteredExams.length === 0 ? 0 : pageStart + 1}-
-            {Math.min(pageStart + PAGE_SIZE, filteredExams.length)} of {filteredExams.length}
+            {Math.min(pageStart + PAGE_SIZE, filteredExams.length)} of{" "}
+            {filteredExams.length}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
@@ -512,14 +631,16 @@ export default function ExamManagementPage() {
             : undefined
         }
         initialSelectedQuestionIds={
-          editingExam?.id ? examQuestionIds[editingExam.id] ?? [] : []
+          editingExam?.id ? (examQuestionIds[editingExam.id] ?? []) : []
         }
       />
 
       <AssignQuestionModal
         open={assignExamId !== null}
         examTitle={assignExam?.title}
-        assignedQuestionIds={assignExamId ? examQuestionIds[assignExamId] ?? [] : []}
+        assignedQuestionIds={
+          assignExamId ? (examQuestionIds[assignExamId] ?? []) : []
+        }
         onClose={() => setAssignExamId(null)}
         onAssign={handleAssignQuestion}
       />
@@ -530,7 +651,6 @@ export default function ExamManagementPage() {
         onConfirm={handleConfirmAction}
       />
 
-      <Footer />
     </div>
   );
 }

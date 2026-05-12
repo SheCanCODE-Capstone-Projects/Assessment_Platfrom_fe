@@ -101,13 +101,13 @@ function CreateExamModalContent({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <div className={`relative w-full rounded-xl border border-zinc-200 bg-white shadow-xl ${usesExamBuilderLayout ? "max-w-5xl" : "max-w-lg"}`}>
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-4 sm:px-6 sm:py-5">
           <h2 className={`${usesExamBuilderLayout ? "text-2xl" : "text-base"} font-semibold text-zinc-900`}>
             {isEditMode ? "Edit Exam" : "Create New Exam"}
           </h2>
@@ -115,7 +115,7 @@ function CreateExamModalContent({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-green-100 hover:text-zinc-700"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6 6 18M6 6l12 12" />
@@ -123,7 +123,7 @@ function CreateExamModalContent({
           </button>
         </div>
 
-        <div className={`${usesExamBuilderLayout ? "max-h-[72vh] space-y-7" : "max-h-[70vh] space-y-4"} overflow-y-auto px-6 py-5`}>
+        <div className={`${usesExamBuilderLayout ? "max-h-[72vh] space-y-7" : "max-h-[70vh] space-y-4"} overflow-y-auto px-4 py-5 sm:px-6`}>
           <div>
             <label className={`${usesExamBuilderLayout ? "mb-2 text-sm" : "mb-1.5 text-xs"} block font-medium text-zinc-700`}>
               Exam Title{usesExamBuilderLayout && " *"}
@@ -204,18 +204,18 @@ function CreateExamModalContent({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-6 py-4">
+        <div className="flex flex-col-reverse gap-3 border-t border-zinc-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 sm:w-auto"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="inline-flex h-9 items-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 sm:w-auto"
           >
             {isEditMode ? "Update Exam" : "Create Exam"}
           </button>

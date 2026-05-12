@@ -1,7 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import FeatureCard from "@/components/cards/FeatureCard";
 import StatCard from "@/components/cards/StatCard";
-import Footer from "@/components/layout/Footer";
 import Button from "@/components/ui/Button";
 
 function Icon({
@@ -24,7 +23,7 @@ function Icon({
 
 export default function AdminPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="flex flex-1 flex-col bg-zinc-50">
       <Navbar
         brand={{ name: "CodeAssess Admin", href: "/admin" }}
         right={
@@ -40,7 +39,7 @@ export default function AdminPage() {
         }
       />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-6">
           <div className="text-xs font-medium text-zinc-500">Dashboard</div>
         </div>
@@ -98,7 +97,7 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="text-sm font-semibold text-zinc-900">
             Recent Submissions
           </div>
@@ -122,8 +121,6 @@ export default function AdminPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }
-

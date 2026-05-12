@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { greenSelectClassName, greenSelectOptionClassName } from "@/components/ui/selectStyles";
 
 export type QuestionDifficulty = "EASY" | "MEDIUM" | "HARD";
 export type QuestionLanguage = "JAVASCRIPT" | "TYPESCRIPT" | "PYTHON" | "JAVA" | "CPP";
@@ -105,6 +104,25 @@ export const difficultyStyles: Record<QuestionDifficulty, string> = {
   HARD: "border-red-200 bg-red-50 text-red-700",
 };
 
+type DifficultyFilter = "all" | QuestionDifficulty;
+type LanguageFilter = "all" | QuestionLanguage;
+
+const difficultyFilterOptions: { value: DifficultyFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "EASY", label: "Easy" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "HARD", label: "Hard" },
+];
+
+const languageFilterOptions: { value: LanguageFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "JAVASCRIPT", label: "JavaScript" },
+  { value: "TYPESCRIPT", label: "TypeScript" },
+  { value: "PYTHON", label: "Python" },
+  { value: "JAVA", label: "Java" },
+  { value: "CPP", label: "C++" },
+];
+
 export default function AssignQuestionModal({
   open,
   examTitle,
@@ -124,6 +142,81 @@ export default function AssignQuestionModal({
   );
 }
 
+function FilterDropdown<T extends string>({
+  label,
+  value,
+  options,
+  open,
+  onOpenChange,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onChange: (value: T) => void;
+}) {
+  const selectedOption = options.find((option) => option.value === value);
+
+  return (
+    <label className="text-sm text-zinc-600">
+      {label}
+      <div
+        className="relative mt-1.5"
+        onBlur={(event) => {
+          const nextFocus = event.relatedTarget as Node | null;
+
+          if (!nextFocus || !event.currentTarget.contains(nextFocus)) {
+            onOpenChange(false);
+          }
+        }}
+      >
+        <button
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() => onOpenChange(!open)}
+          className="flex h-10 w-full items-center justify-between rounded-md border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-900 outline-none transition hover:border-emerald-500 hover:text-emerald-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30"
+        >
+          <span>{selectedOption?.label ?? value}</span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            className="h-4 w-4 text-zinc-900"
+            fill="currentColor"
+          >
+            <path d="M5.5 7.5h9L10 13l-4.5-5.5Z" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border border-zinc-300 bg-white py-1 shadow-lg">
+            <div role="listbox" aria-label={label}>
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={option.value === value}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    onChange(option.value);
+                    onOpenChange(false);
+                  }}
+                  className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-zinc-700 hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white focus:outline-none"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </label>
+  );
+}
+
 function AssignQuestionModalContent({
   examTitle,
   assignedQuestionIds,
@@ -131,8 +224,10 @@ function AssignQuestionModalContent({
   onAssign,
 }: Omit<AssignQuestionModalProps, "open"> & { assignedQuestionIds: string[] }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [difficulty, setDifficulty] = useState<"all" | QuestionDifficulty>("all");
-  const [language, setLanguage] = useState<"all" | QuestionLanguage>("all");
+  const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
+  const [language, setLanguage] = useState<LanguageFilter>("all");
+  const [difficultyDropdownOpen, setDifficultyDropdownOpen] = useState(false);
+  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const assignedIds = useMemo(() => new Set(assignedQuestionIds), [assignedQuestionIds]);
@@ -185,13 +280,13 @@ function AssignQuestionModalContent({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <div className="relative w-full max-w-3xl rounded-xl border border-zinc-200 bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-4 sm:px-6">
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-zinc-900">Assign Questions</h2>
             {examTitle && <p className="mt-0.5 truncate text-xs text-zinc-500">{examTitle}</p>}
@@ -208,7 +303,7 @@ function AssignQuestionModalContent({
           </button>
         </div>
 
-        <div className="max-h-[72vh] space-y-4 overflow-y-auto px-6 py-5">
+        <div className="max-h-[72vh] space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_160px_160px]">
             <label className="text-sm text-zinc-600">
               Search question bank
@@ -221,35 +316,23 @@ function AssignQuestionModalContent({
               />
             </label>
 
-            <label className="text-sm text-zinc-600">
-              Difficulty
-              <select
-                value={difficulty}
-                onChange={(event) => setDifficulty(event.target.value as "all" | QuestionDifficulty)}
-                className={`mt-1.5 h-10 w-full px-3 ${greenSelectClassName}`}
-              >
-                <option className={greenSelectOptionClassName} value="all">All</option>
-                <option className={greenSelectOptionClassName} value="EASY">Easy</option>
-                <option className={greenSelectOptionClassName} value="MEDIUM">Medium</option>
-                <option className={greenSelectOptionClassName} value="HARD">Hard</option>
-              </select>
-            </label>
+            <FilterDropdown
+              label="Difficulty"
+              value={difficulty}
+              options={difficultyFilterOptions}
+              open={difficultyDropdownOpen}
+              onOpenChange={setDifficultyDropdownOpen}
+              onChange={setDifficulty}
+            />
 
-            <label className="text-sm text-zinc-600">
-              Language
-              <select
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as "all" | QuestionLanguage)}
-                className={`mt-1.5 h-10 w-full px-3 ${greenSelectClassName}`}
-              >
-                <option className={greenSelectOptionClassName} value="all">All</option>
-                <option className={greenSelectOptionClassName} value="JAVASCRIPT">JavaScript</option>
-                <option className={greenSelectOptionClassName} value="TYPESCRIPT">TypeScript</option>
-                <option className={greenSelectOptionClassName} value="PYTHON">Python</option>
-                <option className={greenSelectOptionClassName} value="JAVA">Java</option>
-                <option className={greenSelectOptionClassName} value="CPP">C++</option>
-              </select>
-            </label>
+            <FilterDropdown
+              label="Language"
+              value={language}
+              options={languageFilterOptions}
+              open={languageDropdownOpen}
+              onOpenChange={setLanguageDropdownOpen}
+              onChange={setLanguage}
+            />
           </div>
 
           <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
@@ -350,11 +433,11 @@ function AssignQuestionModalContent({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-6 py-4">
+        <div className="flex flex-col-reverse gap-3 border-t border-zinc-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 sm:w-auto"
           >
             Cancel
           </button>
@@ -362,7 +445,7 @@ function AssignQuestionModalContent({
             type="button"
             onClick={handleSubmit}
             disabled={selectedQuestions.length === 0}
-            className="inline-flex h-9 items-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
           >
             Assign Selected
           </button>

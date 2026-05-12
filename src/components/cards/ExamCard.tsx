@@ -125,7 +125,7 @@ export default function ExamCard({
 
   return (
     <article className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-[15px] font-semibold text-zinc-900">{exam.title}</h3>
@@ -134,7 +134,7 @@ export default function ExamCard({
           <p className="mt-1 text-sm leading-5 text-zinc-500">{exam.description}</p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
           <button
             type="button"
             onClick={onEdit}
@@ -191,23 +191,23 @@ export default function ExamCard({
         <button
           type="button"
           onClick={onToggleStatus}
-          className="inline-flex h-9 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50"
+          className="inline-flex h-9 w-full items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 sm:w-auto"
         >
           {nextStatusLabel}
         </button>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <button
             type="button"
             onClick={onAssignQuestions}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-orange-200 bg-white px-4 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50"
+            className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-orange-200 bg-white px-4 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 sm:w-auto"
           >
             <PlusCircleIcon />
             Assign Questions
           </button>
           <Link
             href={detailHref}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50"
+            className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 sm:w-auto"
           >
             View Details
             <ArrowRightIcon />

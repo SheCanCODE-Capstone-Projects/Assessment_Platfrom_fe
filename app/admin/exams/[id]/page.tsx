@@ -82,7 +82,7 @@ const EXAM: Exam = {
   ],
 };
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+
 
 function ArrowLeftIcon() {
   return (
@@ -169,15 +169,15 @@ function StatPill({ icon, label }: { icon: React.ReactNode; label: string }) {
 
 function QuestionCard({ question, index }: { question: Question; index: number }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-600">
             {index + 1}
           </span>
           <h3 className="text-[15px] font-semibold text-zinc-900 truncate">{question.title}</h3>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <DifficultyBadge level={question.difficulty} />
           <span className="text-sm font-medium text-zinc-500 tabular-nums">{question.marks} marks</span>
         </div>
@@ -219,12 +219,12 @@ export default function ExamDetailPage() {
   const timeUnitLabel = exam.timeUnit === "SECONDS" ? "sec" : exam.timeUnit === "HOURS" ? "hr" : "min";
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="flex flex-1 flex-col bg-zinc-50">
 
       {/* Header */}
       <div className="w-full bg-white border-b border-zinc-200">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               aria-label="Back"
@@ -236,7 +236,7 @@ export default function ExamDetailPage() {
             <div className="inline-flex h-8 w-8 items-center justify-center rounded bg-orange-500 text-white">
               <ClipboardIcon />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-sm font-semibold text-zinc-900 truncate max-w-50 sm:max-w-none">
                 {exam.title}
               </div>
@@ -246,10 +246,15 @@ export default function ExamDetailPage() {
         </div>
       </div>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8 space-y-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <Link href="/admin/exams"
+          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 transition-colors">
+          <ArrowLeftIcon />
+          Back to Exam Management
+        </Link>
 
         {/* Overview */}
-        <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-lg font-semibold text-zinc-900">{exam.title}</h1>
@@ -258,7 +263,7 @@ export default function ExamDetailPage() {
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
+              className="inline-flex h-9 w-full shrink-0 items-center justify-center rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 sm:w-auto"
             >
               Edit Exam
             </button>
@@ -282,7 +287,7 @@ export default function ExamDetailPage() {
             <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-zinc-400">
               Assessment Link
             </div>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <a href={exam.link} target="_blank" rel="noopener noreferrer"
                 className="break-all text-sm text-teal-600 hover:text-teal-700 hover:underline">
                 {exam.link}
@@ -291,7 +296,7 @@ export default function ExamDetailPage() {
                 type="button"
                 onClick={() => navigator.clipboard.writeText(exam.link)}
                 aria-label="Copy link"
-                className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 transition-colors"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700"
               >
                 <CopyIcon />
               </button>
@@ -301,7 +306,7 @@ export default function ExamDetailPage() {
 
         {/* Questions */}
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-sm font-semibold text-zinc-900">
               Questions
               <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-600">
@@ -317,15 +322,6 @@ export default function ExamDetailPage() {
             ))}
           </div>
         </section>
-
-        {/* Back link */}
-        <div className="pb-4">
-          <Link href="/admin/exams"
-            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 transition-colors">
-            <ArrowLeftIcon />
-            Back to Exam Management
-          </Link>
-        </div>
 
       </main>
 
