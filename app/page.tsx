@@ -11,7 +11,7 @@ export default function Home() {
       <Navbar />
 
       <main className="w-full flex-1">
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <section className="py-24 text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
             Technical Assessment Platform
@@ -29,7 +29,7 @@ export default function Home() {
         </section>
         </div>
         <section className="pb-20 pt-12 bg-[#F3F4F6]">
-          <div className="mx-auto w-full max-w-6xl px-6">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
             <h2 className="text-center text-[15px] font-semibold text-black/90">
               Platform Features
             </h2>

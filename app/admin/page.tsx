@@ -40,7 +40,7 @@ export default function AdminPage() {
         }
       />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         <div className="mb-6">
           <div className="text-xs font-medium text-zinc-500">Dashboard</div>
         </div>
