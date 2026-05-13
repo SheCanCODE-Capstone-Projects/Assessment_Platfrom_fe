@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
-import Navbar from "@/src/components/layout/Navbar";
-import Button from "@/src/components/ui/Button";
+import Navbar from "@/components/layout/Navbar";
+import Button from "@/components/ui/Button";
 
 type ReadinessStatus = "idle" | "checking" | "granted" | "denied";
 

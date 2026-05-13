@@ -1,4 +1,4 @@
-import InstructionsPage from "@/pages/InstructionsPage";
+import InstructionsPage from "./InstructionsPage";
 
 export default function InstructionsRoute() {
   return <InstructionsPage />;

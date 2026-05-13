@@ -10,9 +10,9 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/router";
 
-import Navbar from "@/src/components/layout/Navbar";
-import Button from "@/src/components/ui/Button";
-import SuccessToast from "@/src/components/feedback/SuccessToast";
+import Navbar from "@/components/layout/Navbar";
+import Button from "@/components/ui/Button";
+import SuccessToast from "@/components/feedback/SuccessToast";
 
 const LANGUAGE_OPTIONS = [
   "JavaScript",
