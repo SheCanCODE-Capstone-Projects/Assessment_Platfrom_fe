@@ -171,7 +171,7 @@ function CreateExamModalContent({
               <select
                 value={timeUnit}
                 onChange={(event) => setTimeUnit(event.target.value as TimeUnit)}
-                className={`h-[38px] w-full px-3 ${greenSelectClassName}`}
+                className={`h-9.5 w-full px-3 ${greenSelectClassName}`}
               >
                 <option className={greenSelectOptionClassName} value="SECONDS">Seconds</option>
                 <option className={greenSelectOptionClassName} value="MINUTES">Minutes</option>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import ExamCard, {
   type ExamCardData,
@@ -60,7 +60,7 @@ function AdminHeader({
 }: {
   title: string;
   subtitle: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   const router = useRouter();
 
@@ -175,6 +175,63 @@ const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
   INACTIVE: "Inactive",
 };
 
+function isExamStatus(value: unknown): value is ExamStatus {
+  return value === "ACTIVE" || value === "INACTIVE";
+}
+
+function isTimeUnit(
+  value: unknown,
+): value is NonNullable<ExamCardData["timeUnit"]> {
+  return value === "SECONDS" || value === "MINUTES" || value === "HOURS";
+}
+
+function normalizeExam(value: unknown): ExamCardData | null {
+  if (!value || typeof value !== "object") return null;
+
+  const exam = value as Partial<ExamCardData>;
+
+  if (
+    typeof exam.title !== "string" ||
+    typeof exam.description !== "string" ||
+    typeof exam.duration !== "number" ||
+    typeof exam.passMark !== "number" ||
+    typeof exam.questions !== "number" ||
+    typeof exam.totalMarks !== "number" ||
+    typeof exam.link !== "string" ||
+    !isExamStatus(exam.status)
+  ) {
+    return null;
+  }
+
+  return {
+    id: typeof exam.id === "string" ? exam.id : String(Date.now()),
+    title: exam.title,
+    description: exam.description,
+    duration: exam.duration,
+    timeUnit: isTimeUnit(exam.timeUnit) ? exam.timeUnit : "MINUTES",
+    passMark: exam.passMark,
+    questions: exam.questions,
+    totalMarks: exam.totalMarks,
+    link: exam.link,
+    status: exam.status,
+  };
+}
+
+function normalizeExamQuestionIds(
+  value: unknown,
+): Record<string, string[]> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string[]] =>
+        typeof entry[0] === "string" &&
+        Array.isArray(entry[1]) &&
+        entry[1].every((questionId) => typeof questionId === "string"),
+    ),
+  );
+}
+
 function readStoredExams() {
   try {
     const storedExams = window.localStorage.getItem(EXAMS_STORAGE_KEY);
@@ -186,16 +243,16 @@ function readStoredExams() {
       ? JSON.parse(storedQuestionIds)
       : null;
 
+    const exams = Array.isArray(parsedExams)
+      ? parsedExams
+          .map((exam) => normalizeExam(exam))
+          .filter((exam): exam is ExamCardData => exam !== null)
+      : INITIAL_EXAMS;
+    const examQuestionIds = normalizeExamQuestionIds(parsedQuestionIds);
+
     return {
-      exams: Array.isArray(parsedExams)
-        ? (parsedExams as ExamCardData[])
-        : INITIAL_EXAMS,
-      examQuestionIds:
-        parsedQuestionIds &&
-        typeof parsedQuestionIds === "object" &&
-        !Array.isArray(parsedQuestionIds)
-          ? (parsedQuestionIds as Record<string, string[]>)
-          : INITIAL_EXAM_QUESTION_IDS,
+      exams: exams.length > 0 ? exams : INITIAL_EXAMS,
+      examQuestionIds: examQuestionIds ?? INITIAL_EXAM_QUESTION_IDS,
     };
   } catch {
     return {
@@ -237,11 +294,15 @@ export default function ExamManagementPage() {
   useEffect(() => {
     if (!storageReady) return;
 
-    window.localStorage.setItem(EXAMS_STORAGE_KEY, JSON.stringify(exams));
-    window.localStorage.setItem(
-      EXAM_QUESTION_IDS_STORAGE_KEY,
-      JSON.stringify(examQuestionIds),
-    );
+    try {
+      window.localStorage.setItem(EXAMS_STORAGE_KEY, JSON.stringify(exams));
+      window.localStorage.setItem(
+        EXAM_QUESTION_IDS_STORAGE_KEY,
+        JSON.stringify(examQuestionIds),
+      );
+    } catch {
+      
+    }
   }, [examQuestionIds, exams, storageReady]);
 
   const filteredExams = useMemo(() => {
