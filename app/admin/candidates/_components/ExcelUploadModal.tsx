@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Modal from "@/src/components/ui/Modal";
-import Button from "@/src/components/ui/Button";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 import type { CandidateFormData } from "./AddCandidateModal";
 
 export type ParsedRow = Partial<CandidateFormData>;

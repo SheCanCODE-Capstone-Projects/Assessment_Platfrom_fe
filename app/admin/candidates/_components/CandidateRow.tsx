@@ -1,4 +1,4 @@
-import Badge from "@/src/components/ui/Badge";
+import Badge from "@/components/ui/Badge";
 import Checkbox from "./Checkbox";
 import ActionButtons from "./ActionButtons";
 import type { Candidate, CandidateStatus } from "../_data/types";

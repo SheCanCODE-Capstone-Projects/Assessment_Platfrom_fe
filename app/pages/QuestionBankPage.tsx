@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Button from "@/src/components/ui/Button";
+import Button from "@/components/ui/Button";
 
 type Difficulty = "EASY" | "MEDIUM" | "HARD";
 type DifficultyFilter = "ALL" | Difficulty;

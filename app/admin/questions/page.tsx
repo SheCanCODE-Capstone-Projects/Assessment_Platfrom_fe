@@ -1,4 +1,4 @@
-import QuestionBankPage from "@/app/pages/QuestionBankPage";
+import QuestionBankPage from "../../pages/QuestionBankPage";
 
 export default function AdminQuestionsPage() {
   return <QuestionBankPage />;

@@ -2,12 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Footer from "@/src/components/layout/Footer";
-import Button from "@/src/components/ui/Button";
-import Modal from "@/src/components/ui/Modal";
-import Alert from "@/src/components/feedback/Alert";
-import Notification from "@/src/components/feedback/Notification";
-import ConfirmDialog from "@/src/components/feedback/ConfirmDialog";
+import Footer from "@/components/layout/Footer";
+import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
+import Alert from "@/components/feedback/Alert";
+import Notification from "@/components/feedback/Notification";
+import ConfirmDialog from "@/components/feedback/ConfirmDialog";
 import CandidateTable from "./_components/CandidateTable";
 import CandidateDetailsModal from "./_components/CandidateDetailsModal";
 import AssignCandidateModal from "./_components/AssignCandidateModal";
@@ -62,6 +62,16 @@ function BackButton() {
         <path d="M15 18l-6-6 6-6" />
       </svg>
     </button>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <path d="M20 8v6M23 11h-6" />
+    </svg>
   );
 }
 
@@ -299,22 +309,6 @@ export default function CandidatesPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">
-      {/* Header */}
-      <div className="w-full bg-white sticky top-0 z-10">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <BackButton />
-            <div className="inline-flex h-8 w-8 items-center justify-center rounded bg-emerald-600 text-white">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="8.5" cy="7" r="4" />
-                <path d="M20 8v6M23 11h-6" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-zinc-900">Candidate Management</div>
-              <div className="text-xs text-zinc-500">{candidates.length} candidate{candidates.length !== 1 ? "s" : ""}</div>
-    <div className="flex flex-1 flex-col bg-zinc-50">
       <div className="w-full bg-white">
         <div className="mx-auto flex h-14 max-w-6xl items-center px-4 sm:px-6">
           <BackButton />
@@ -384,36 +378,6 @@ export default function CandidatesPage() {
               tone="zinc"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
-        <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
-          <div className="text-sm font-semibold text-zinc-900">
-            How to Assign Candidates
-          </div>
-          <p className="mt-2 text-xs leading-5 text-zinc-600">
-            To assign a candidate to an exam, share the assessment link with
-            them. The link can be found on the Exam Management page.
-          </p>
-
-          <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-[11px] text-emerald-900">
-            <div className="font-medium">Example:</div>
-            <div className="mt-1 break-all">
-              https://fg.story_16809212.figma.site/candidate/exam
-            </div>
-            <div className="mt-2 text-emerald-800/90">
-              When candidates click this link, they&apos;ll fill out their
-              information and start the assessment.
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-10">
-          <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-zinc-50 text-zinc-500">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
             >
               Previous
             </Button>

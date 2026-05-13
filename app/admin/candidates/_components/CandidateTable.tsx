@@ -1,4 +1,4 @@
-import EmptyState from "@/src/components/states/EmptyState";
+import EmptyState from "@/components/states/EmptyState";
 import Checkbox from "./Checkbox";
 import CandidateRow from "./CandidateRow";
 import type { Candidate } from "../_data/types";

@@ -1,4 +1,4 @@
-import Input from "@/src/components/ui/Input";
+import Input from "@/components/ui/Input";
 
 type Props = { value: string; onChange: (v: string) => void };
 
