@@ -22,7 +22,12 @@ export default function Home() {
             one place.
           </p>
           <div className="mt-8 flex justify-center">
-            <Button href="/admin" tone="green" size="md" className="px-8">
+            <Button
+              href="/candidate-register"
+              tone="green"
+              size="md"
+              className="px-8"
+            >
               Start Sample Assessment
             </Button>
           </div>
