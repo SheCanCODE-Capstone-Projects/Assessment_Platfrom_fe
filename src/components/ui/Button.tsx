@@ -71,7 +71,7 @@ export default function Button({
   ...rest
 }: ButtonProps) {
   const shared = classes(
-    "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:opacity-50 disabled:pointer-events-none",
+    "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:cursor-not-allowed disabled:opacity-50",
     sizeClasses(size),
     variantClasses(variant, tone),
     className
