@@ -322,6 +322,146 @@ const initialQuestions: Question[] = [
     starterCode:
       "func alienOrder(words []string) string {\n    // solve here\n}",
   },
+  {
+    id: 27,
+    title: "Maximum Subarray",
+    description: "Find the contiguous subarray with the largest total sum.",
+    marks: 21,
+    difficulty: "EASY",
+    language: "SWIFT",
+    starterCode:
+      "func maxSubArray(_ nums: [Int]) -> Int {\n    // solve here\n}",
+  },
+  {
+    id: 28,
+    title: "Number of Islands",
+    description: "Count all disconnected islands in the grid.",
+    marks: 31,
+    difficulty: "MEDIUM",
+    language: "PYTHON",
+    starterCode:
+      "def num_islands(grid):\n    # solve here\n    pass",
+  },
+  {
+    id: 29,
+    title: "Regular Expression Matching",
+    description: "Match a string against a pattern with dot and star rules.",
+    marks: 54,
+    difficulty: "HARD",
+    language: "JAVA",
+    starterCode:
+      "public boolean isMatch(String s, String p) {\n    // solve here\n}",
+  },
+  {
+    id: 30,
+    title: "Best Time to Buy and Sell Stock",
+    description: "Return the best profit you can make with one trade.",
+    marks: 19,
+    difficulty: "EASY",
+    language: "TYPESCRIPT",
+    starterCode:
+      "function maxProfit(prices: number[]): number {\n  // solve here\n}",
+  },
+  {
+    id: 31,
+    title: "Decode Ways",
+    description: "Count how many ways a numeric string can be decoded.",
+    marks: 35,
+    difficulty: "MEDIUM",
+    language: "KOTLIN",
+    starterCode:
+      "fun numDecodings(s: String): Int {\n    // solve here\n}",
+  },
+  {
+    id: 32,
+    title: "LFU Cache",
+    description: "Design a cache that evicts the least frequently used entry.",
+    marks: 56,
+    difficulty: "HARD",
+    language: "CPLUSPLUS",
+    starterCode:
+      "class LFUCache {\npublic:\n  // solve here\n};",
+  },
+  {
+    id: 33,
+    title: "Move Zeroes",
+    description: "Shift all zeroes to the end while keeping other values in order.",
+    marks: 13,
+    difficulty: "EASY",
+    language: "GO",
+    starterCode:
+      "func moveZeroes(nums []int) {\n    // solve here\n}",
+  },
+  {
+    id: 34,
+    title: "Search in Rotated Sorted Array",
+    description: "Find the target in a sorted array that has been rotated.",
+    marks: 36,
+    difficulty: "MEDIUM",
+    language: "RUST",
+    starterCode:
+      "fn search(nums: Vec<i32>, target: i32) -> i32 {\n    // solve here\n}",
+  },
+  {
+    id: 35,
+    title: "Burst Balloons",
+    description: "Choose the best order to burst balloons for the maximum score.",
+    marks: 58,
+    difficulty: "HARD",
+    language: "PYTHON",
+    starterCode:
+      "def max_coins(nums):\n    # solve here\n    pass",
+  },
+  {
+    id: 36,
+    title: "Majority Element",
+    description: "Return the value that appears more than half the time.",
+    marks: 11,
+    difficulty: "EASY",
+    language: "JAVA",
+    starterCode:
+      "public int majorityElement(int[] nums) {\n    // solve here\n}",
+  },
+  {
+    id: 37,
+    title: "Daily Temperatures",
+    description: "For each day, return how long it takes to get a warmer day.",
+    marks: 30,
+    difficulty: "MEDIUM",
+    language: "JAVASCRIPT",
+    starterCode:
+      "function dailyTemperatures(temperatures) {\n  // solve here\n}",
+  },
+  {
+    id: 38,
+    title: "Edit Distance",
+    description: "Compute the fewest edits needed to transform one word into another.",
+    marks: 53,
+    difficulty: "HARD",
+    language: "CSHARP",
+    starterCode:
+      "public int MinDistance(string word1, string word2) {\n    // solve here\n}",
+  },
+  {
+    id: 39,
+    title: "Pascal's Triangle",
+    description: "Generate the first rows of Pascal's Triangle.",
+    marks: 12,
+    difficulty: "EASY",
+    language: "PHP",
+    starterCode:
+      "function generate($numRows) {\n    // solve here\n}",
+  },
+  {
+    id: 40,
+    title: "K Closest Points to Origin",
+    description: "Return the points closest to the origin.",
+    marks: 33,
+    difficulty: "MEDIUM",
+    language: "TYPESCRIPT",
+    starterCode:
+      "function kClosest(points: number[][], k: number): number[][] {\n  // solve here\n}",
+  },
 ];
 
 const emptyFormValues: QuestionFormValues = {
@@ -361,20 +501,8 @@ function formatLanguage(language: Language) {
   return language.charAt(0) + language.slice(1).toLowerCase();
 }
 
-function getVisiblePages(currentPage: number, totalPages: number) {
-  if (totalPages <= 4) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  if (currentPage <= 2) {
-    return [1, 2, 3, totalPages];
-  }
-
-  if (currentPage >= totalPages - 1) {
-    return [1, totalPages - 2, totalPages - 1, totalPages];
-  }
-
-  return [1, currentPage, currentPage + 1, totalPages];
+function getVisiblePages(totalPages: number) {
+  return Array.from({ length: totalPages }, (_, index) => index + 1);
 }
 
 function CodeAssessIcon() {
@@ -447,39 +575,6 @@ function QuestionBankHeader() {
   );
 }
 
-function SearchSection({
-  searchQuery,
-  onSearchChange,
-}: {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-}) {
-  return (
-    <section className="flex justify-end">
-      <div className="relative w-full sm:w-[240px]">
-        <input
-          type="text"
-          placeholder="Search questions..."
-          value={searchQuery}
-          onChange={(event) => onSearchChange(event.target.value)}
-          className="h-10 w-full rounded-md border border-zinc-900  px-3 pl-10 pr-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-        />
-        <svg
-          viewBox="0 0 24 24"
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" strokeLinecap="round" />
-        </svg>
-      </div>
-    </section>
-  );
-}
-
 function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
   const badgeClasses =
     difficulty === "EASY"
@@ -501,10 +596,14 @@ function StatusFilter({
   activeFilter,
   onFilterChange,
   onAddQuestion,
+  searchQuery,
+  onSearchChange,
 }: {
   activeFilter: DifficultyFilter;
   onFilterChange: (filter: DifficultyFilter) => void;
   onAddQuestion: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -538,17 +637,19 @@ function StatusFilter({
 
   return (
     <section className="w-full rounded-3xl border border-zinc-200 bg-white px-6 py-6 shadow-sm">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <Button tone="green" size="md" onClick={onAddQuestion}>
           + Add Question
         </Button>
 
         <div
           ref={containerRef}
-          className="relative w-full sm:w-auto sm:min-w-[170px]"
+          className="relative w-full lg:flex-1 lg:px-6"
         >
-          <div className="flex items-center justify-end gap-3">
-            <span className="text-sm font-medium text-zinc-600">Question Status</span>
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-sm font-medium text-zinc-600">
+              Question Status
+            </span>
             <button
               type="button"
               aria-haspopup="listbox"
@@ -577,7 +678,7 @@ function StatusFilter({
           </div>
 
           {isOpen ? (
-            <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-lg">
+            <div className="absolute left-1/2 top-[calc(100%+0.5rem)] z-20 w-full max-w-[220px] -translate-x-1/2 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-lg">
               <ul role="listbox" aria-label="Question status filter">
                 {options.map((option) => {
                   const isActive = option.value === activeFilter;
@@ -607,6 +708,27 @@ function StatusFilter({
               </ul>
             </div>
           ) : null}
+        </div>
+
+        <div className="relative w-full lg:w-[260px]">
+          <input
+            type="text"
+            placeholder="Search questions..."
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+            className="h-10 w-full rounded-md border border-zinc-900 px-3 pl-10 pr-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          />
+          <svg
+            viewBox="0 0 24 24"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" strokeLinecap="round" />
+          </svg>
         </div>
       </div>
     </section>
@@ -1174,7 +1296,11 @@ function DeleteQuestionModal({
             >
               Cancel
             </Button>
-            <Button tone="green" onClick={onConfirm}>
+            <Button
+              tone="zinc"
+              onClick={onConfirm}
+              className="!border-red-600 !bg-red-600 !text-white hover:!bg-red-700"
+            >
               OK
             </Button>
           </div>
@@ -1330,7 +1456,7 @@ export default function QuestionBankPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<DifficultyFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  const questionsPerPage = 6;
+  const questionsPerPage = 4;
 
   const activeQuestion = useMemo(
     () => questions.find((question) => question.id === activeQuestionId) ?? null,
@@ -1470,23 +1596,20 @@ export default function QuestionBankPage() {
     startIndex,
     startIndex + questionsPerPage
   );
-  const visiblePages = getVisiblePages(visiblePage, totalPages);
+  const visiblePages = getVisiblePages(totalPages);
 
   return (
     <main className="min-h-screen bg-zinc-50">
       <QuestionBankHeader />
 
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
-        <SearchSection
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-        />
-
-        <div className="mt-6">
+        <div>
           <StatusFilter
             activeFilter={activeFilter}
             onFilterChange={handleFilterChange}
             onAddQuestion={openCreateModal}
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
           />
         </div>
 
@@ -1510,31 +1633,19 @@ export default function QuestionBankPage() {
             </button>
 
             <div className="flex items-center gap-2">
-              {visiblePages.map((page, index) => {
-                const previousPage = visiblePages[index - 1];
-                const showEllipsis =
-                  index > 0 && previousPage !== undefined && page - previousPage > 1;
-
-                return (
-                  <div key={page} className="flex items-center gap-2">
-                    {showEllipsis ? (
-                      <span className="px-1 text-sm font-medium text-zinc-400">
-                        ...
-                      </span>
-                    ) : null}
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      className={`min-w-9 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                        visiblePage === page
-                          ? "bg-emerald-600 text-white"
-                          : "border border-zinc-200 bg-white text-zinc-700 hover:border-emerald-200 hover:text-emerald-700"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  </div>
-                );
-              })}
+              {visiblePages.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`min-w-9 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    visiblePage === page
+                      ? "bg-emerald-600 text-white"
+                      : "border border-zinc-200 bg-white text-zinc-700 hover:border-emerald-200 hover:text-emerald-700"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
             </div>
 
             <button
