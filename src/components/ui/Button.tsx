@@ -8,7 +8,7 @@ import type {
 
 
 type ButtonVariant = "solid" | "outline" | "ghost";
-type ButtonTone = "green" | "orange" | "zinc";
+type ButtonTone = "green" | "orange" | "zinc" | "red";
 type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = {
@@ -30,18 +30,21 @@ function variantClasses(variant: ButtonVariant, tone: ButtonTone) {
     green:"bg-emerald-600 text-white hover:bg-emerald-700",
     orange: "bg-orange-500 text-white hover:bg-orange-600",
     zinc: "bg-zinc-900 text-white hover:bg-zinc-800",
+    red: "bg-red-600 text-white hover:bg-red-700",
   };
 
   const toneOutline: Record<ButtonTone, string> = {
     green: "border-emerald-600 text-emerald-700 hover:bg-emerald-50",
     orange: "border-orange-500 text-orange-600 hover:bg-orange-50",
     zinc: "border-zinc-300 text-zinc-800 hover:bg-zinc-50",
+    red: "border-red-500 text-red-600 hover:bg-red-50",
   };
 
   const toneGhost: Record<ButtonTone, string> = {
     green: "text-emerald-700 hover:bg-emerald-50",
     orange: "text-orange-600 hover:bg-orange-50",
     zinc: "text-zinc-800 hover:bg-zinc-50",
+    red: "text-red-600 hover:bg-red-50",
   };
 
   if (variant === "solid") return toneSolid[tone];

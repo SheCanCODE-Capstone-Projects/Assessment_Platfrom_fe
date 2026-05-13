@@ -1,4 +1,4 @@
-import { useCameraMonitor } from "@/src/hooks/useCameraMonitor";
+import { useCameraMonitor } from "@/hooks/useCameraMonitor";
 
 type Props = {
   className?: string;

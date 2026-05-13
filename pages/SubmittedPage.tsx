@@ -1,5 +1,5 @@
-import Button from "@/src/components/ui/Button";
-import SuccessToast from "@/src/components/feedback/SuccessToast";
+import Button from "@/components/ui/Button";
+import SuccessToast from "@/components/feedback/SuccessToast";
 
 /**
  * Shows the final confirmation after an assessment has been submitted.

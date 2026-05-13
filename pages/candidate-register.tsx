@@ -1,4 +1,4 @@
-import CandidateRegisterPage from "@/pages/CandidateRegisterPage";
+import CandidateRegisterPage from "./CandidateRegisterPage";
 
 export default function CandidateRegisterRoute() {
   return <CandidateRegisterPage />;

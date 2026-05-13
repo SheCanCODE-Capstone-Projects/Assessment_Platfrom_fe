@@ -1,4 +1,4 @@
-import { useIntegritySystem } from "@/src/hooks/useIntegritySystem";
+import { useIntegritySystem } from "@/hooks/useIntegritySystem";
 import CameraMonitor from "./CameraMonitor";
 
 type Props = {
