@@ -11,6 +11,7 @@ export default function Home() {
 
       <main className="w-full flex-1">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <section className="py-24 text-center">
         <section className="py-16 text-center sm:py-24">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
             Technical Assessment Platform
