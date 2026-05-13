@@ -1,8 +1,7 @@
-import Navbar from "@/src/components/layout/Navbar";
-import FeatureCard from "@/src/components/cards/FeatureCard";
-import StatCard from "@/src/components/cards/StatCard";
-import Footer from "@/src/components/layout/Footer";
-import Button from "@/src/components/ui/Button";
+import Navbar from "@/components/layout/Navbar";
+import FeatureCard from "@/components/cards/FeatureCard";
+import StatCard from "@/components/cards/StatCard";
+import Button from "@/components/ui/Button";
 
 function Icon({
   d,
@@ -22,9 +21,27 @@ function Icon({
   );
 }
 
+function QuestionMarkIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9.09 9A3 3 0 0 1 15 9c0 2-3 2.25-3 5" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
 export default function AdminPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="flex flex-1 flex-col bg-zinc-50">
       <Navbar
         brand={{ name: "CodeAssess Admin", href: "/admin" }}
         right={
@@ -40,7 +57,7 @@ export default function AdminPage() {
         }
       />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-6">
           <div className="text-xs font-medium text-zinc-500">Dashboard</div>
         </div>
@@ -72,7 +89,7 @@ export default function AdminPage() {
           <h2 className="text-sm font-semibold text-zinc-900">Quick Actions</h2>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <FeatureCard
-              icon={<Icon d="M12 20h9" />}
+              icon={<QuestionMarkIcon />}
               title="Manage Questions"
               description="Create and edit coding questions"
               href="/admin/questions"
@@ -98,7 +115,7 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="text-sm font-semibold text-zinc-900">
             Recent Submissions
           </div>
@@ -122,8 +139,6 @@ export default function AdminPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }
-
