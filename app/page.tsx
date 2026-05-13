@@ -20,13 +20,20 @@ export default function Home() {
             assessments, manage candidates, and review code submissions all in
             one place.
           </p>
-          <div className="mt-8 flex justify-center">
-            <Button href="/admin" tone="green" size="md" className="w-full px-8 sm:w-auto">
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button
+              href="/admin"
+              tone="green"
+              size="md"
+              className="w-full px-8 sm:w-auto"
+            >
+              Admin Dashboard
+            </Button>
             <Button
               href="/candidate-register"
               tone="green"
               size="md"
-              className="px-8"
+              className="w-full px-8 sm:w-auto"
             >
               Start Sample Assessment
             </Button>
