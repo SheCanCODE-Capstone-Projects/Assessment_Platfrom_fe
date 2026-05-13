@@ -22,6 +22,12 @@ export default function Home() {
           </p>
           <div className="mt-8 flex justify-center">
             <Button href="/admin" tone="green" size="md" className="w-full px-8 sm:w-auto">
+            <Button
+              href="/candidate-register"
+              tone="green"
+              size="md"
+              className="px-8"
+            >
               Start Sample Assessment
             </Button>
           </div>

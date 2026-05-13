@@ -5,6 +5,12 @@
   padding: 6px 10px;
   color: #10b981;
   background-color: #ffffff;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-geist-sans: Arial, Helvetica, sans-serif;
+  --font-geist-mono: "Cascadia Code", Consolas, monospace;
 }
 
 /* Dropdown options (default) */
