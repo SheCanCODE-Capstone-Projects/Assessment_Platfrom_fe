@@ -1,18 +1,17 @@
-import Navbar from "@/src/components/layout/Navbar";
-import FeatureCard from "@/src/components/cards/FeatureCard";
-import Button from "@/src/components/ui/Button";
-import Footer from "@/src/components/layout/Footer";
+import Navbar from "@/components/layout/Navbar";
+import FeatureCard from "@/components/cards/FeatureCard";
+import Button from "@/components/ui/Button";
 
 
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="flex flex-1 flex-col bg-zinc-50">
       <Navbar />
 
       <main className="w-full flex-1">
-        <div className="mx-auto w-full max-w-6xl px-6">
-        <section className="py-24 text-center">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <section className="py-16 text-center sm:py-24">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
             Technical Assessment Platform
           </h1>
@@ -22,6 +21,7 @@ export default function Home() {
             one place.
           </p>
           <div className="mt-8 flex justify-center">
+            <Button href="/admin" tone="green" size="md" className="w-full px-8 sm:w-auto">
             <Button
               href="/candidate-register"
               tone="green"
@@ -34,7 +34,7 @@ export default function Home() {
         </section>
         </div>
         <section className="pb-20 pt-12 bg-[#F3F4F6]">
-          <div className="mx-auto w-full max-w-6xl px-6">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
             <h2 className="text-center text-[15px] font-semibold text-black/90">
               Platform Features
             </h2>
@@ -113,7 +113,6 @@ export default function Home() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }

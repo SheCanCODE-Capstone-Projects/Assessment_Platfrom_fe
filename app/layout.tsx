@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +18,12 @@ export default function RootLayout({
       lang="en"
       className="h-full antialiased"
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full bg-zinc-50">
+        <div className="flex min-h-screen flex-col">
+          <div className="flex flex-1 flex-col">{children}</div>
+          <Footer />
+        </div>
+      </body>
     </html>
   );
 }
