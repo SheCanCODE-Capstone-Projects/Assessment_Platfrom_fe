@@ -29,6 +29,7 @@ export default function Navbar({
 
         <div className="flex shrink-0 items-center gap-3">
           {right ?? (
+            <Button href="/admin/login" tone="orange" size="sm">
             <Button href="/admin" tone="orange" size="sm" className="w-full sm:w-auto">
               Admin Login
             </Button>
