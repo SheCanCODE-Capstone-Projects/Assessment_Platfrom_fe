@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Footer from "@/src/components/layout/Footer";
 
 type Status = "pending" | "passed" | "failed" | "interview";
 type TabKey = "all" | "reviewed" | Status;
@@ -178,10 +177,23 @@ export default function CodeReviewsPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/admin")}
-            className="shrink-0 text-2xl leading-none text-zinc-950 transition-colors hover:text-zinc-600"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
             aria-label="Back to admin"
           >
-            &larr;
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path
+                d="M15 18l-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
 
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-lg font-bold text-white">
@@ -544,8 +556,6 @@ export default function CodeReviewsPage() {
           </div>
         </div>
       )}
-
-      <Footer />
     </div>
   );
 }

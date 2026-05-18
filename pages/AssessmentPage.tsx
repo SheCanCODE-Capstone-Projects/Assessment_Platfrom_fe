@@ -3,7 +3,9 @@ import MonacoEditor from "@monaco-editor/react";
 
 import Navbar from "@/components/layout/Navbar";
 import Button from "@/components/ui/Button";
+import SuccessToast from "@/components/feedback/SuccessToast";
 import CameraMonitor from "@/features/assessment-session/components/CameraMonitor";
+import SubmitConfirmModal from "@/components/modals/SubmitConfirmModal";
 
 const TOTAL_SECONDS = 60 * 60;
 const MAX_TAB_VIOLATIONS = 3;
@@ -372,9 +374,11 @@ export default function AssessmentPage() {
   const [, setViolations] = useState(0);
   const violationsRef = useRef(0);
   const [submitted, setSubmitted] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const submitAssessment = useCallback((reason: SubmitReason = "manual") => {
+    setShowSubmitConfirm(false);
     setSubmitted(true);
     setToast(
       reason === "timer"
@@ -443,17 +447,28 @@ export default function AssessmentPage() {
               <ClockIcon />
               <span>{formatTime(secondsLeft)}</span>
             </div>
-            <Button tone="orange" onClick={() => submitAssessment("manual")} disabled={submitted} className="h-10 rounded-md px-5 font-semibold">
+            <Button tone="orange" onClick={() => setShowSubmitConfirm(true)} disabled={submitted} className="h-10 rounded-md px-5 font-semibold">
               Submit
             </Button>
           </div>
         }
       />
 
-      <Toast message={toast} tone={submitted ? "danger" : "warning"} />
+      {submitted && toast === "Assessment submitted successfully." ? (
+        <SuccessToast message={toast} />
+      ) : (
+        <Toast message={toast} tone="warning" />
+      )}
       <CameraMonitor
+        className="bottom-20 left-4 z-40"
         disabled={submitted}
         onCameraBlocked={handleCameraBlocked}
+      />
+      <SubmitConfirmModal
+        isOpen={showSubmitConfirm}
+        onCancel={() => setShowSubmitConfirm(false)}
+        onConfirm={() => submitAssessment("manual")}
+        isSubmitting={submitted}
       />
 
       <div className="border-b border-zinc-200 px-4 py-3 text-sm text-slate-600 sm:hidden">

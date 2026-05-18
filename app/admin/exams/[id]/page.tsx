@@ -86,8 +86,8 @@ const EXAM: Exam = {
 
 function ArrowLeftIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M15 18l-6-6 6-6" />
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -229,7 +229,7 @@ export default function ExamDetailPage() {
               type="button"
               aria-label="Back"
               onClick={() => router.push("/admin/exams")}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
             >
               <ArrowLeftIcon />
             </button>

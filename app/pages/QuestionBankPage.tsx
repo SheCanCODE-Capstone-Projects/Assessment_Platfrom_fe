@@ -1658,9 +1658,6 @@ export default function QuestionBankPage() {
           </div>
         </div>
 
-        <p className="mt-10 text-center text-sm text-zinc-500">
-          © 2026 CodeAssess. All rights reserved.
-        </p>
       </div>
 
       {modalMode ? (

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Navbar from "@/src/components/layout/Navbar";
-import Card from "@/src/components/ui/Card";
-import Button from "@/src/components/ui/Button";
+import Navbar from "@/components/layout/Navbar";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
 
 export default function AdminLoginPage() {
   const router = useRouter();
