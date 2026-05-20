@@ -6,6 +6,12 @@ import { useRouter } from "next/navigation";
 type Status = "pending" | "passed" | "failed" | "interview";
 type TabKey = "all" | "reviewed" | Status;
 
+type QuestionReview = {
+  questionId: string;
+  score: number | "";
+  note: string;
+};
+
 type Submission = {
   id: number;
   name: string;
@@ -14,6 +20,7 @@ type Submission = {
   date: string;
   questions: number;
   reviewNotes?: string;
+  questionReviews?: QuestionReview[];
 };
 
 const initialData: Submission[] = [
@@ -52,6 +59,12 @@ const statusLabels: Record<Status, string> = {
 
 const pageSize = 5;
 
+const createEmptyQuestionReview = (): QuestionReview => ({
+  questionId: "",
+  score: "",
+  note: "",
+});
+
 export default function CodeReviewsPage() {
   const router = useRouter();
 
@@ -60,10 +73,14 @@ export default function CodeReviewsPage() {
   const [selected, setSelected] = useState<Submission | null>(null);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [questionSearchText, setQuestionSearchText] = useState<
+    Record<string, string>
+  >({});
   const [page, setPage] = useState(1);
 
   const questions = [
     {
+      id: "q1",
       title: "Question 1",
       heading: "Two Sum",
       marks: 20,
@@ -73,6 +90,7 @@ export default function CodeReviewsPage() {
 }`,
     },
     {
+      id: "q2",
       title: "Question 2",
       heading: "Reverse String",
       marks: 15,
@@ -81,6 +99,7 @@ export default function CodeReviewsPage() {
 }`,
     },
     {
+      id: "q3",
       title: "Question 3",
       heading: "Palindrome",
       marks: 25,
@@ -95,6 +114,10 @@ export default function CodeReviewsPage() {
   );
 
   const activeAnswerLines = answers[activeQuestion].split("\n");
+  const selectedQuestionReviews =
+    selected?.questionReviews && selected.questionReviews.length > 0
+      ? selected.questionReviews
+      : [createEmptyQuestionReview()];
 
   const filtered = submissions.filter((submission) => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -126,15 +149,60 @@ export default function CodeReviewsPage() {
       )
     );
     setSelected(null);
+    setQuestionSearchText({});
   };
 
-  const updateReviewNotes = (id: number, reviewNotes: string) => {
+  const updateQuestionReviews = (
+    id: number,
+    updater: (reviews: QuestionReview[]) => QuestionReview[]
+  ) => {
     setSubmissions((prev) =>
       prev.map((submission) =>
-        submission.id === id ? { ...submission, reviewNotes } : submission
+        submission.id === id
+          ? {
+              ...submission,
+              questionReviews: updater(
+                submission.questionReviews && submission.questionReviews.length > 0
+                  ? submission.questionReviews
+                  : [createEmptyQuestionReview()]
+              ),
+            }
+          : submission
       )
     );
-    setSelected((prev) => (prev ? { ...prev, reviewNotes } : prev));
+
+    setSelected((prev) =>
+      prev && prev.id === id
+        ? {
+            ...prev,
+            questionReviews: updater(
+              prev.questionReviews && prev.questionReviews.length > 0
+                ? prev.questionReviews
+                : [createEmptyQuestionReview()]
+            ),
+          }
+        : prev
+    );
+  };
+
+  const updateQuestionReview = (
+    submissionId: number,
+    reviewIndex: number,
+    patch: Partial<QuestionReview>
+  ) => {
+    updateQuestionReviews(submissionId, (reviews) =>
+      reviews.map((review, index) =>
+        index === reviewIndex ? { ...review, ...patch } : review
+      )
+    );
+  };
+
+  const addQuestionReview = (submissionId: number) => {
+    updateQuestionReviews(submissionId, (reviews) =>
+      reviews.length >= questions.length
+        ? reviews
+        : [...reviews, createEmptyQuestionReview()]
+    );
   };
 
   const tabs: { key: TabKey; label: string }[] = [
@@ -289,10 +357,14 @@ export default function CodeReviewsPage() {
                 <span className="break-words">Submitted: {item.date}</span>
               </div>
 
-              {item.reviewNotes && (
+              {item.questionReviews && item.questionReviews.length > 0 && (
                 <div className="mt-4 rounded-md bg-zinc-50 px-3 py-3 text-sm text-slate-900">
-                  <span className="font-bold">Review Notes:</span>{" "}
-                  {item.reviewNotes}
+                  <span className="font-bold">Question Reviews:</span>{" "}
+                  {
+                    item.questionReviews.filter((review) => review.questionId)
+                      .length
+                  }{" "}
+                  saved
                 </div>
               )}
             </div>
@@ -301,6 +373,7 @@ export default function CodeReviewsPage() {
               onClick={() => {
                 setSelected(item);
                 setActiveQuestion(0);
+                setQuestionSearchText({});
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-600 sm:w-auto"
             >
@@ -387,7 +460,10 @@ export default function CodeReviewsPage() {
                 </p>
               </div>
               <button
-                onClick={() => setSelected(null)}
+                onClick={() => {
+                  setSelected(null);
+                  setQuestionSearchText({});
+                }}
                 className="shrink-0 text-3xl leading-none text-slate-400 hover:text-slate-600"
                 aria-label="Close review modal"
               >
@@ -452,26 +528,160 @@ export default function CodeReviewsPage() {
               </section>
             </div>
 
-            <div className="grid gap-5 px-4 py-5 sm:px-6 sm:py-7 md:grid-cols-2 md:gap-6">
-              <label className="text-sm font-medium text-slate-900">
-                Score (%) - Optional
-                <input
-                  type="text"
-                  placeholder="Enter score"
-                  className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-4 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                />
-              </label>
+            <div className="space-y-4 px-4 py-5 sm:px-6 sm:py-7">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-950">
+                    Question Reviews
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Add a score and note for each reviewed question.
+                  </p>
+                </div>
+              </div>
 
-              <label className="text-sm font-medium text-slate-900">
-                Review Notes - Optional
-                <textarea
-                  value={selected.reviewNotes ?? ""}
-                  onChange={(event) =>
-                    updateReviewNotes(selected.id, event.target.value)
-                  }
-                  className="mt-2 h-11 w-full resize-none rounded-lg border border-emerald-500 px-4 py-3 text-sm outline-none ring-1 ring-emerald-500"
-                />
-              </label>
+              {selectedQuestionReviews.map((review, reviewIndex) => {
+                const canAddReview =
+                  reviewIndex === selectedQuestionReviews.length - 1 &&
+                  selectedQuestionReviews.length < questions.length;
+                const searchKey = `${selected.id}-${reviewIndex}`;
+                const selectedQuestionIds = selectedQuestionReviews
+                  .map((item, index) =>
+                    index === reviewIndex ? null : item.questionId
+                  )
+                  .filter((questionId): questionId is string =>
+                    Boolean(questionId)
+                  );
+                const availableQuestions = questions.filter(
+                  (question) =>
+                    question.id === review.questionId ||
+                    !selectedQuestionIds.includes(question.id)
+                );
+                const selectedQuestion = questions.find(
+                  (question) => question.id === review.questionId
+                );
+                const questionInputValue =
+                  questionSearchText[searchKey] ?? selectedQuestion?.title ?? "";
+
+                return (
+                  <div
+                    key={searchKey}
+                    className="rounded-lg border border-zinc-200 bg-zinc-50 p-4"
+                  >
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,5fr)_2.5rem]">
+                      <label className="text-sm font-medium text-slate-900">
+                        Select Question
+                        <input
+                          list={`question-options-${selected.id}-${reviewIndex}`}
+                          value={questionInputValue}
+                          onChange={(event) => {
+                            const nextValue = event.target.value;
+                            const matchedQuestion = availableQuestions.find(
+                              (question) => question.title === nextValue
+                            );
+
+                            setQuestionSearchText((prev) => ({
+                              ...prev,
+                              [searchKey]: nextValue,
+                            }));
+
+                            if (matchedQuestion) {
+                              updateQuestionReview(selected.id, reviewIndex, {
+                                questionId: matchedQuestion.id,
+                              });
+                              setQuestionSearchText((prev) => ({
+                                ...prev,
+                                [searchKey]: matchedQuestion.title,
+                              }));
+                              return;
+                            }
+
+                            if (nextValue === "") {
+                              updateQuestionReview(selected.id, reviewIndex, {
+                                questionId: "",
+                              });
+                            }
+                          }}
+                          placeholder="Search or select a question"
+                          className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        />
+                        <datalist id={`question-options-${selected.id}-${reviewIndex}`}>
+                          {availableQuestions.map((question) => (
+                            <option key={question.id} value={question.title}>
+                              {question.heading}
+                            </option>
+                          ))}
+                        </datalist>
+                      </label>
+
+                      <label className="text-sm font-medium text-slate-900">
+                        Score (%) - Optional
+                        <input
+                          type="number"
+                          min="0"
+                          max={selectedQuestion?.marks}
+                          value={review.score}
+                          onChange={(event) =>
+                            updateQuestionReview(selected.id, reviewIndex, {
+                              score:
+                                event.target.value === ""
+                                  ? ""
+                                  : Number(event.target.value),
+                            })
+                          }
+                          disabled={!review.questionId}
+                          placeholder="Enter score"
+                          className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                        />
+                      </label>
+
+                      <label className="text-sm font-medium text-slate-900">
+                        Review Notes - Optional
+                        <textarea
+                          value={review.note}
+                          onChange={(event) =>
+                            updateQuestionReview(selected.id, reviewIndex, {
+                              note: event.target.value,
+                            })
+                          }
+                          disabled={!review.questionId}
+                          placeholder="Add notes for this question"
+                          className="mt-2 h-11 w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                        />
+                      </label>
+
+                      <div className="flex items-end">
+                        {canAddReview ? (
+                          <button
+                            type="button"
+                            onClick={() => addQuestionReview(selected.id)}
+                            className="inline-flex h-11 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white transition-colors hover:bg-emerald-600"
+                            aria-label="Add another question review"
+                            title="Add another question review"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 5v14m7-7H5"
+                              />
+                            </svg>
+                          </button>
+                        ) : (
+                          <span className="h-11 w-10" aria-hidden="true" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="flex flex-col gap-4 bg-zinc-50 px-4 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-center lg:justify-between">
