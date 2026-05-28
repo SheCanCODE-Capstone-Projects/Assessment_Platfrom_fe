@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import { setAuth } from "@/lib/adminAuth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,12 +14,39 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (email === "admin@codeassess.com" && password === "password") {
+  const handleLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = (await res.json().catch(() => null)) as
+        | { success?: boolean; message?: string; accessToken?: string; role?: string | null }
+        | null;
+
+      if (!res.ok || !data?.success) {
+        setError(data?.message ?? "Login failed");
+        return;
+      }
+
+      if (!data.accessToken) {
+        setError("Login succeeded but no token returned");
+        return;
+      }
+
+      setAuth(data.accessToken, data.role);
       router.push("/admin");
-    } else {
-      setError("Invalid email or password");
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,8 +89,9 @@ export default function AdminLoginPage() {
               onClick={handleLogin}
               tone="green"
               className="w-full h-10"
+              disabled={loading}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </Button>
 
             {error && (
@@ -70,12 +99,6 @@ export default function AdminLoginPage() {
                 {error}
               </p>
             )}
-
-            {process.env.NODE_ENV === "development" && (
-  <p className="text-center text-xs text-zinc-500">
-    Demo: admin@codeassess.com / password
-  </p>
-)}
 
           </div>
 
