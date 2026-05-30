@@ -3,7 +3,14 @@
 import { useMemo, useState } from "react";
 
 export type QuestionDifficulty = "EASY" | "MEDIUM" | "HARD";
-export type QuestionLanguage = "JAVASCRIPT" | "TYPESCRIPT" | "PYTHON" | "JAVA" | "CPP";
+export type QuestionLanguage =
+  | "JAVASCRIPT"
+  | "TYPESCRIPT"
+  | "PYTHON"
+  | "JAVA"
+  | "CPP"
+  | "CSHARP"
+  | "PHP";
 
 export type QuestionBankItem = {
   id: string;
@@ -23,6 +30,7 @@ type AssignQuestionModalProps = {
   open: boolean;
   examTitle?: string;
   assignedQuestionIds?: string[];
+  questions?: QuestionBankItem[];
   onClose: () => void;
   onAssign?: (payload: AssignQuestionPayload) => void;
 };
@@ -96,6 +104,8 @@ export const languageLabels: Record<QuestionLanguage, string> = {
   PYTHON: "Python",
   JAVA: "Java",
   CPP: "C++",
+  CSHARP: "C#",
+  PHP: "PHP",
 };
 
 export const difficultyStyles: Record<QuestionDifficulty, string> = {
@@ -121,12 +131,15 @@ const languageFilterOptions: { value: LanguageFilter; label: string }[] = [
   { value: "PYTHON", label: "Python" },
   { value: "JAVA", label: "Java" },
   { value: "CPP", label: "C++" },
+  { value: "CSHARP", label: "C#" },
+  { value: "PHP", label: "PHP" },
 ];
 
 export default function AssignQuestionModal({
   open,
   examTitle,
   assignedQuestionIds = [],
+  questions = QUESTION_BANK,
   onClose,
   onAssign,
 }: AssignQuestionModalProps) {
@@ -136,6 +149,7 @@ export default function AssignQuestionModal({
     <AssignQuestionModalContent
       examTitle={examTitle}
       assignedQuestionIds={assignedQuestionIds}
+      questions={questions}
       onClose={onClose}
       onAssign={onAssign}
     />
@@ -220,9 +234,13 @@ function FilterDropdown<T extends string>({
 function AssignQuestionModalContent({
   examTitle,
   assignedQuestionIds,
+  questions,
   onClose,
   onAssign,
-}: Omit<AssignQuestionModalProps, "open"> & { assignedQuestionIds: string[] }) {
+}: Omit<AssignQuestionModalProps, "open"> & {
+  assignedQuestionIds: string[];
+  questions: QuestionBankItem[];
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
   const [language, setLanguage] = useState<LanguageFilter>("all");
@@ -237,7 +255,7 @@ function AssignQuestionModalContent({
   const filteredQuestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return QUESTION_BANK.filter((question) => {
+    return questions.filter((question) => {
       const matchesDifficulty = difficulty === "all" || question.difficulty === difficulty;
       const matchesLanguage = language === "all" || question.language === language;
       const matchesSearch =
@@ -248,9 +266,9 @@ function AssignQuestionModalContent({
 
       return matchesDifficulty && matchesLanguage && matchesSearch;
     });
-  }, [difficulty, language, searchTerm]);
+  }, [difficulty, language, questions, searchTerm]);
 
-  const selectedQuestions = QUESTION_BANK.filter((question) => selectedIdSet.has(question.id));
+  const selectedQuestions = questions.filter((question) => selectedIdSet.has(question.id));
   const selectedMarks = selectedQuestions.reduce((total, question) => total + question.marks, 0);
 
   const toggleQuestion = (questionId: string) => {

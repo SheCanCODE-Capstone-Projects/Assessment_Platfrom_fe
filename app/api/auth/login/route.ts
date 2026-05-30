@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 
+const TOKEN_COOKIE = "admin_token";
+const ROLE_COOKIE = "admin_role";
+
 function getApiBaseUrl() {
   const raw =
     process.env.API_BASE_URL ??
     process.env.PRODUCTION_API_BASE_URL ??
-    "http://localhost:8000";
+    "https://assessment-platfrom-be.onrender.com";
   // Avoid double slashes when appending paths
   return raw.replace(/\/+$/, "");
 }
@@ -48,8 +51,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const accessToken = payload?.data?.accessToken as string | undefined;
-  const role = payload?.data?.role as string | undefined;
+  const authPayload = payload?.data ?? payload;
+  const accessToken = authPayload?.accessToken as string | undefined;
+  const role = authPayload?.role as string | undefined;
 
   if (!accessToken) {
     return NextResponse.json(
@@ -58,10 +62,29 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     success: true,
     accessToken,
     role: role ?? null,
   });
-}
 
+  response.cookies.set(TOKEN_COOKIE, accessToken, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
+  if (role) {
+    response.cookies.set(ROLE_COOKIE, role, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+  } else {
+    response.cookies.delete(ROLE_COOKIE);
+  }
+
+  return response;
+}

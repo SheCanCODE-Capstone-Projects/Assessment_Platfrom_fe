@@ -10,9 +10,18 @@ import CreateExamModal, {
   type CreateExamPayload,
 } from "@/components/modals/CreateExamModal";
 import AssignQuestionModal, {
-  QUESTION_BANK,
   type AssignQuestionPayload,
+  type QuestionBankItem,
 } from "@/components/modals/AssignQuestionModal";
+import {
+  assignAssessmentQuestions,
+  createAssessment,
+  deleteAssessment,
+  getAssessmentRows,
+  updateAssessment,
+  updateAssessmentStatus,
+} from "@/services/assessments";
+import { getQuestions } from "@/services/questions";
 
 type StatusFilter = "all" | ExamStatus;
 type ConfirmAction =
@@ -98,10 +107,12 @@ function AdminHeader({
 
 function ConfirmDialog({
   action,
+  busy,
   onCancel,
   onConfirm,
 }: {
   action: ConfirmAction | null;
+  busy: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -111,7 +122,9 @@ function ConfirmDialog({
   const title = isDelete ? "Delete Exam" : "Change Exam Status";
   const message = isDelete
     ? `Are you sure you want to delete "${action.examTitle}"?`
-    : `Are you sure you want to change "${action.examTitle}" to ${action.nextStatus === "ACTIVE" ? "active" : "inactive"}?`;
+    : `Are you sure you want to change "${action.examTitle}" to ${
+        action.nextStatus === "ACTIVE" ? "active" : "inactive"
+      }?`;
   const confirmLabel = isDelete ? "Delete" : "Change";
   const confirmClass = isDelete
     ? "bg-red-500 hover:bg-red-600 focus-visible:ring-red-400/50"
@@ -130,16 +143,18 @@ function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50"
+            disabled={busy}
+            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 disabled:pointer-events-none disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`inline-flex h-9 items-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 ${confirmClass}`}
+            disabled={busy}
+            className={`inline-flex h-9 items-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-60 ${confirmClass}`}
           >
-            {confirmLabel}
+            {busy ? "Working..." : confirmLabel}
           </button>
         </div>
       </div>
@@ -147,130 +162,26 @@ function ConfirmDialog({
   );
 }
 
-const INITIAL_EXAMS: ExamCardData[] = [
-  {
-    id: "123",
-    title: "JavaScript Developer Assessment",
-    description: "Assess core JavaScript skills",
-    duration: 60,
-    timeUnit: "MINUTES",
-    passMark: 70,
-    questions: 3,
-    totalMarks: 60,
-    link: "https://codeassess.com/exam/123",
-    status: "ACTIVE",
-  },
-];
-
-const INITIAL_EXAM_QUESTION_IDS: Record<string, string[]> = {
-  "123": ["q1", "q2", "q3"],
-};
-
 const PAGE_SIZE = 4;
-const EXAMS_STORAGE_KEY = "assessment-platform.admin.exams";
-const EXAM_QUESTION_IDS_STORAGE_KEY =
-  "assessment-platform.admin.examQuestionIds";
 const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
   all: "All status",
   ACTIVE: "Active",
   INACTIVE: "Inactive",
 };
 
-function isExamStatus(value: unknown): value is ExamStatus {
-  return value === "ACTIVE" || value === "INACTIVE";
-}
-
-function isTimeUnit(
-  value: unknown,
-): value is NonNullable<ExamCardData["timeUnit"]> {
-  return value === "SECONDS" || value === "MINUTES" || value === "HOURS";
-}
-
-function normalizeExam(value: unknown): ExamCardData | null {
-  if (!value || typeof value !== "object") return null;
-
-  const exam = value as Partial<ExamCardData>;
-
-  if (
-    typeof exam.title !== "string" ||
-    typeof exam.description !== "string" ||
-    typeof exam.duration !== "number" ||
-    typeof exam.passMark !== "number" ||
-    typeof exam.questions !== "number" ||
-    typeof exam.totalMarks !== "number" ||
-    typeof exam.link !== "string" ||
-    !isExamStatus(exam.status)
-  ) {
-    return null;
-  }
-
-  return {
-    id: typeof exam.id === "string" ? exam.id : String(Date.now()),
-    title: exam.title,
-    description: exam.description,
-    duration: exam.duration,
-    timeUnit: isTimeUnit(exam.timeUnit) ? exam.timeUnit : "MINUTES",
-    passMark: exam.passMark,
-    questions: exam.questions,
-    totalMarks: exam.totalMarks,
-    link: exam.link,
-    status: exam.status,
-  };
-}
-
-function normalizeExamQuestionIds(
-  value: unknown,
-): Record<string, string[]> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-
-  return Object.fromEntries(
-    Object.entries(value).filter(
-      (entry): entry is [string, string[]] =>
-        typeof entry[0] === "string" &&
-        Array.isArray(entry[1]) &&
-        entry[1].every((questionId) => typeof questionId === "string"),
-    ),
-  );
-}
-
-function readStoredExams() {
-  try {
-    const storedExams = window.localStorage.getItem(EXAMS_STORAGE_KEY);
-    const storedQuestionIds = window.localStorage.getItem(
-      EXAM_QUESTION_IDS_STORAGE_KEY,
-    );
-    const parsedExams = storedExams ? JSON.parse(storedExams) : null;
-    const parsedQuestionIds = storedQuestionIds
-      ? JSON.parse(storedQuestionIds)
-      : null;
-
-    const exams = Array.isArray(parsedExams)
-      ? parsedExams
-          .map((exam) => normalizeExam(exam))
-          .filter((exam): exam is ExamCardData => exam !== null)
-      : INITIAL_EXAMS;
-    const examQuestionIds = normalizeExamQuestionIds(parsedQuestionIds);
-
-    return {
-      exams: exams.length > 0 ? exams : INITIAL_EXAMS,
-      examQuestionIds: examQuestionIds ?? INITIAL_EXAM_QUESTION_IDS,
-    };
-  } catch {
-    return {
-      exams: INITIAL_EXAMS,
-      examQuestionIds: INITIAL_EXAM_QUESTION_IDS,
-    };
-  }
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong";
 }
 
 export default function ExamManagementPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingExamId, setEditingExamId] = useState<string | null>(null);
   const [assignExamId, setAssignExamId] = useState<string | null>(null);
-  const [exams, setExams] = useState<ExamCardData[]>(INITIAL_EXAMS);
+  const [exams, setExams] = useState<ExamCardData[]>([]);
   const [examQuestionIds, setExamQuestionIds] = useState<
     Record<string, string[]>
-  >(INITIAL_EXAM_QUESTION_IDS);
+  >({});
+  const [questionBank, setQuestionBank] = useState<QuestionBankItem[]>([]);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(
     null,
   );
@@ -278,33 +189,31 @@ export default function ExamManagementPage() {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [storageReady, setStorageReady] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [mutationBusy, setMutationBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const storedState = readStoredExams();
-
-      setExams(storedState.exams);
-      setExamQuestionIds(storedState.examQuestionIds);
-      setStorageReady(true);
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, []);
-
-  useEffect(() => {
-    if (!storageReady) return;
-
+  const loadExamManagementData = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      window.localStorage.setItem(EXAMS_STORAGE_KEY, JSON.stringify(exams));
-      window.localStorage.setItem(
-        EXAM_QUESTION_IDS_STORAGE_KEY,
-        JSON.stringify(examQuestionIds),
-      );
-    } catch {
-      
+      const [assessmentRows, questions] = await Promise.all([
+        getAssessmentRows(),
+        getQuestions(),
+      ]);
+      setExams(assessmentRows.exams);
+      setExamQuestionIds(assessmentRows.examQuestionIds);
+      setQuestionBank(questions);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
-  }, [examQuestionIds, exams, storageReady]);
+  };
+
+  useEffect(() => {
+    void loadExamManagementData();
+  }, []);
 
   const filteredExams = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -331,6 +240,18 @@ export default function ExamManagementPage() {
   const assignExam = exams.find((exam) => exam.id === assignExamId);
   const editingExam = exams.find((exam) => exam.id === editingExamId);
 
+  const runMutation = async (operation: () => Promise<void>) => {
+    setMutationBusy(true);
+    setError(null);
+    try {
+      await operation();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setMutationBusy(false);
+    }
+  };
+
   const changeStatusFilter = (nextFilter: StatusFilter) => {
     setStatusFilter(nextFilter);
     setStatusDropdownOpen(false);
@@ -338,158 +259,114 @@ export default function ExamManagementPage() {
   };
 
   const handleCreateExam = (payload: CreateExamPayload) => {
-    const id = String(Date.now());
-    const selectedQuestionIds = payload.selectedQuestionIds ?? [];
-    const selectedQuestions = QUESTION_BANK.filter((question) =>
-      selectedQuestionIds.includes(question.id),
-    );
-
-    setExams((prev) => [
-      {
-        id,
-        title: payload.examTitle,
-        description: payload.description,
-        duration: payload.timeValue,
-        timeUnit: payload.timeUnit,
-        passMark: payload.passMark,
-        questions: selectedQuestions.length,
-        totalMarks: selectedQuestions.reduce(
-          (total, question) => total + question.marks,
-          0,
-        ),
-        link: `https://codeassess.com/exam/${id}`,
-        status: payload.status,
-      },
-      ...prev,
-    ]);
-    setExamQuestionIds((prev) => ({
-      ...prev,
-      [id]: selectedQuestionIds,
-    }));
-    setStatusFilter("all");
-    setPage(1);
+    void runMutation(async () => {
+      const createdExam = await createAssessment(payload);
+      setExams((prev) => [createdExam, ...prev]);
+      setExamQuestionIds((prev) => ({
+        ...prev,
+        [createdExam.id ?? ""]: payload.selectedQuestionIds ?? [],
+      }));
+      setStatusFilter("all");
+      setPage(1);
+    });
   };
 
   const handleUpdateExam = (payload: CreateExamPayload) => {
     if (!editingExamId) return;
-    const selectedQuestions = payload.selectedQuestionIds
-      ? QUESTION_BANK.filter((question) =>
-          payload.selectedQuestionIds?.includes(question.id),
-        )
-      : null;
 
-    setExams((prev) =>
-      prev.map((exam) =>
-        exam.id === editingExamId
-          ? {
-              ...exam,
-              title: payload.examTitle,
-              description: payload.description,
-              duration: payload.timeValue,
-              timeUnit: payload.timeUnit,
-              passMark: payload.passMark,
-              status: payload.status,
-              questions: selectedQuestions
-                ? selectedQuestions.length
-                : exam.questions,
-              totalMarks: selectedQuestions
-                ? selectedQuestions.reduce(
-                    (total, question) => total + question.marks,
-                    0,
-                  )
-                : exam.totalMarks,
-            }
-          : exam,
-      ),
-    );
-    if (payload.selectedQuestionIds) {
+    void runMutation(async () => {
+      const updatedExam = await updateAssessment(editingExamId, payload);
+      setExams((prev) =>
+        prev.map((exam) => (exam.id === editingExamId ? updatedExam : exam)),
+      );
       setExamQuestionIds((prev) => ({
         ...prev,
         [editingExamId]: payload.selectedQuestionIds ?? [],
       }));
-    }
-    setEditingExamId(null);
-  };
-
-  const deleteExam = (examId: string) => {
-    setExams((prev) => prev.filter((item) => item.id !== examId));
-    setExamQuestionIds((prev) => {
-      const next = { ...prev };
-      delete next[examId];
-      return next;
+      setEditingExamId(null);
     });
-  };
-
-  const toggleExamStatus = (examId?: string) => {
-    if (!examId) return;
-
-    setExams((prev) =>
-      prev.map((exam) =>
-        exam.id === examId
-          ? {
-              ...exam,
-              status: exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
-            }
-          : exam,
-      ),
-    );
   };
 
   const handleConfirmAction = () => {
     if (!confirmAction) return;
 
-    if (confirmAction.type === "delete") {
-      deleteExam(confirmAction.examId);
-    } else {
-      toggleExamStatus(confirmAction.examId);
-    }
+    void runMutation(async () => {
+      if (confirmAction.type === "delete") {
+        await deleteAssessment(confirmAction.examId);
+        setExams((prev) =>
+          prev.filter((item) => item.id !== confirmAction.examId),
+        );
+        setExamQuestionIds((prev) => {
+          const next = { ...prev };
+          delete next[confirmAction.examId];
+          return next;
+        });
+      } else {
+        const updatedExam = await updateAssessmentStatus(
+          confirmAction.examId,
+          confirmAction.nextStatus,
+        );
+        setExams((prev) =>
+          prev.map((exam) =>
+            exam.id === confirmAction.examId ? updatedExam : exam,
+          ),
+        );
+      }
 
-    setConfirmAction(null);
+      setConfirmAction(null);
+    });
   };
 
   const handleAssignQuestion = (payload: AssignQuestionPayload) => {
     if (!assignExamId) return;
 
-    const assignedIds = new Set(examQuestionIds[assignExamId] ?? []);
-    const newQuestions = payload.questions.filter(
-      (question) => !assignedIds.has(question.id),
-    );
+    void runMutation(async () => {
+      const nextQuestionIds = Array.from(
+        new Set([
+          ...(examQuestionIds[assignExamId] ?? []),
+          ...payload.questions.map((question) => question.id),
+        ]),
+      );
+      const updatedExam = await assignAssessmentQuestions(
+        assignExamId,
+        nextQuestionIds,
+      );
 
-    if (newQuestions.length === 0) return;
-
-    setExams((prev) =>
-      prev.map((exam) =>
-        exam.id === assignExamId
-          ? {
-              ...exam,
-              questions: exam.questions + newQuestions.length,
-              totalMarks:
-                exam.totalMarks +
-                newQuestions.reduce(
-                  (total, question) => total + question.marks,
-                  0,
-                ),
-            }
-          : exam,
-      ),
-    );
-    setExamQuestionIds((prev) => ({
-      ...prev,
-      [assignExamId]: [
-        ...(prev[assignExamId] ?? []),
-        ...newQuestions.map((question) => question.id),
-      ],
-    }));
+      setExams((prev) =>
+        prev.map((exam) => (exam.id === assignExamId ? updatedExam : exam)),
+      );
+      setExamQuestionIds((prev) => ({
+        ...prev,
+        [assignExamId]: nextQuestionIds,
+      }));
+    });
   };
 
   return (
     <div className="flex flex-1 flex-col bg-zinc-50">
       <AdminHeader
         title="Exam Management"
-        subtitle={`${exams.length} exam${exams.length !== 1 ? "s" : ""}`}
+        subtitle={
+          loading
+            ? "Loading exams"
+            : `${exams.length} exam${exams.length !== 1 ? "s" : ""}`
+        }
       />
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
+        {error && (
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => void loadExamManagementData()}
+              className="inline-flex h-8 items-center justify-center rounded-md border border-red-200 bg-white px-3 font-medium text-red-700 hover:bg-red-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         <section className="mb-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
@@ -555,9 +432,7 @@ export default function ExamManagementPage() {
                               role="option"
                               aria-selected={filter === statusFilter}
                               onMouseDown={(event) => event.preventDefault()}
-                              onClick={() => {
-                                changeStatusFilter(filter);
-                              }}
+                              onClick={() => changeStatusFilter(filter)}
                               className="block w-full cursor-pointer px-3 py-2 text-left text-zinc-700 hover:bg-emerald-500 hover:text-white focus:bg-emerald-500 focus:text-white focus:outline-none"
                             >
                               {STATUS_FILTER_LABELS[filter]}
@@ -592,7 +467,8 @@ export default function ExamManagementPage() {
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 md:mt-6 md:w-auto"
+              disabled={mutationBusy}
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md bg-orange-500 px-4 text-sm font-medium text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 disabled:pointer-events-none disabled:opacity-60 md:mt-6 md:w-auto"
             >
               + Create Exam
             </button>
@@ -601,39 +477,48 @@ export default function ExamManagementPage() {
 
         <section className="min-h-0 flex-1 overflow-y-auto pr-1">
           <div className="flex flex-col gap-4">
-            {visibleExams.map((exam) => (
-              <ExamCard
-                key={exam.id}
-                exam={exam}
-                onEdit={() => {
-                  setEditingExamId(exam.id ?? null);
-                  setModalOpen(true);
-                }}
-                onDelete={() => {
-                  if (!exam.id) return;
+            {loading &&
+              Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-48 animate-pulse rounded-lg border border-zinc-200 bg-white shadow-sm"
+                />
+              ))}
 
-                  setConfirmAction({
-                    type: "delete",
-                    examId: exam.id,
-                    examTitle: exam.title,
-                  });
-                }}
-                onAssignQuestions={() => setAssignExamId(exam.id ?? null)}
-                onToggleStatus={() => {
-                  if (!exam.id) return;
+            {!loading &&
+              visibleExams.map((exam) => (
+                <ExamCard
+                  key={exam.id}
+                  exam={exam}
+                  onEdit={() => {
+                    setEditingExamId(exam.id ?? null);
+                    setModalOpen(true);
+                  }}
+                  onDelete={() => {
+                    if (!exam.id) return;
 
-                  setConfirmAction({
-                    type: "status",
-                    examId: exam.id,
-                    examTitle: exam.title,
-                    nextStatus:
-                      exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
-                  });
-                }}
-              />
-            ))}
+                    setConfirmAction({
+                      type: "delete",
+                      examId: exam.id,
+                      examTitle: exam.title,
+                    });
+                  }}
+                  onAssignQuestions={() => setAssignExamId(exam.id ?? null)}
+                  onToggleStatus={() => {
+                    if (!exam.id) return;
 
-            {visibleExams.length === 0 && (
+                    setConfirmAction({
+                      type: "status",
+                      examId: exam.id,
+                      examTitle: exam.title,
+                      nextStatus:
+                        exam.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+                    });
+                  }}
+                />
+              ))}
+
+            {!loading && visibleExams.length === 0 && (
               <div className="rounded-lg border border-dashed border-zinc-300 bg-white px-6 py-12 text-center text-sm text-zinc-500">
                 No exams match the current search or status.
               </div>
@@ -674,6 +559,7 @@ export default function ExamManagementPage() {
 
       <CreateExamModal
         open={modalOpen}
+        questions={questionBank}
         onClose={() => {
           setModalOpen(false);
           setEditingExamId(null);
@@ -699,6 +585,7 @@ export default function ExamManagementPage() {
 
       <AssignQuestionModal
         open={assignExamId !== null}
+        questions={questionBank}
         examTitle={assignExam?.title}
         assignedQuestionIds={
           assignExamId ? (examQuestionIds[assignExamId] ?? []) : []
@@ -709,10 +596,10 @@ export default function ExamManagementPage() {
 
       <ConfirmDialog
         action={confirmAction}
+        busy={mutationBusy}
         onCancel={() => setConfirmAction(null)}
         onConfirm={handleConfirmAction}
       />
-
     </div>
   );
 }
