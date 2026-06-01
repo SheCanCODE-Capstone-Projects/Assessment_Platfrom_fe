@@ -1,7 +1,7 @@
 import Navbar from "@/components/layout/Navbar";
 import FeatureCard from "@/components/cards/FeatureCard";
 import StatCard from "@/components/cards/StatCard";
-import Button from "@/components/ui/Button";
+import AdminLogoutButton from "@/components/auth/AdminLogoutButton";
 
 function Icon({
   d,
@@ -45,15 +45,7 @@ export default function AdminPage() {
       <Navbar
         brand={{ name: "CodeAssess Admin", href: "/admin" }}
         right={
-          <Button
-            href="/"
-            variant="outline"
-            tone="zinc"
-            size="sm"
-            className="rounded-full border-[#EDEDED] px-5"
-          >
-            Exit Admin
-          </Button>
+          <AdminLogoutButton />
         }
       />
 

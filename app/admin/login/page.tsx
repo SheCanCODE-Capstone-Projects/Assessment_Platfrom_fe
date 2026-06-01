@@ -16,6 +16,7 @@ const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL ??
   "https://assessment-platfrom-be.onrender.com"
 ).replace(/\/$/, "");
+import { setAuth } from "@/lib/adminAuth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -31,6 +32,8 @@ export default function AdminLoginPage() {
 
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
+    try {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -55,6 +58,25 @@ export default function AdminLoginPage() {
       );
     } catch {
       setError("Could not reach the server. Check your connection and try again.");
+      const data = (await res.json().catch(() => null)) as
+        | { success?: boolean; message?: string; accessToken?: string; role?: string | null }
+        | null;
+
+      if (!res.ok || !data?.success) {
+        setError(data?.message ?? "Login failed");
+        return;
+      }
+
+      if (!data.accessToken) {
+        setError("Login succeeded but no token returned");
+        return;
+      }
+
+      setAuth(data.accessToken, data.role);
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -104,6 +126,9 @@ export default function AdminLoginPage() {
               disabled={loading || !email.trim() || !password}
             >
               {loading ? "Signing in…" : "Login"}
+              disabled={loading}
+            >
+              {loading ? "Logging in..." : "Login"}
             </Button>
 
             {error && (
