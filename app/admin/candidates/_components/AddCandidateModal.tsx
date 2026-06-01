@@ -6,7 +6,16 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import type { Candidate } from "../_data/types";
 
-const EXAMS = ["Frontend", "Backend", "Fundamentals"];
+/** Maps to API `language` enum (POST /users). */
+const PROGRAMMING_LANGUAGES = [
+  "JavaScript",
+  "Python",
+  "Java",
+  "C++",
+  "TypeScript",
+  "C#",
+  "PHP",
+];
 
 const NATIONALITIES = [
   "Rwandan", "Ugandan", "Kenyan", "Tanzanian", "Burundian",
@@ -39,13 +48,13 @@ type Props = {
   open: boolean;
   onClose: () => void;
   prefill?: Partial<CandidateFormData>;
-  onSave: (data: Pick<Candidate, "name" | "email" | "phone" | "nationality" | "disability" | "exam">) => void;
+  onSave: (data: Pick<Candidate, "name" | "email" | "phone" | "nationality" | "disability" | "exam">) => void | Promise<void>;
   editing?: Candidate | null;
 };
 
 const empty: CandidateFormData = {
   name: "", email: "", phone: "",
-  nationality: NATIONALITIES[0], disability: DISABILITY_OPTIONS[0], exam: EXAMS[0],
+  nationality: NATIONALITIES[0], disability: DISABILITY_OPTIONS[0], exam: PROGRAMMING_LANGUAGES[0],
 };
 
 function SelectField({ label, value, options, onChange, error }: {
@@ -70,17 +79,18 @@ function SelectField({ label, value, options, onChange, error }: {
 export default function AddCandidateModal({ open, onClose, prefill, onSave, editing }: Props) {
   const initialForm: CandidateFormData = editing
     ? {
-        name: editing.name,
-        email: editing.email,
-        phone: editing.phone,
+        name:        editing.name,
+        email:       editing.email,
+        phone:       editing.phone,
         nationality: editing.nationality || NATIONALITIES[0],
-        disability: editing.disability || DISABILITY_OPTIONS[0],
-        exam: editing.exam,
+        disability:  editing.disability  || DISABILITY_OPTIONS[0],
+        exam:        editing.exam,
       }
     : { ...empty, ...prefill };
 
-  const [form, setForm] = useState<CandidateFormData>(initialForm);
+  const [form, setForm]     = useState<CandidateFormData>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
+  const [saving, setSaving] = useState(false);
 
   function set(field: keyof CandidateFormData, value: string) {
     setForm((p) => ({ ...p, [field]: value }));
@@ -89,29 +99,36 @@ export default function AddCandidateModal({ open, onClose, prefill, onSave, edit
 
   function validate(): Errors {
     const e: Errors = {};
-    if (!form.name.trim()) e.name = "Full name is required";
+    if (!form.name.trim())  e.name  = "Full name is required";
     if (!form.email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email";
     if (!form.phone.trim()) e.phone = "Phone number is required";
     return e;
   }
 
-  function handleSave() {
+  async function handleSave() {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
-    onSave({
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      nationality: form.nationality,
-      disability: form.disability,
-      exam: form.exam,
-    });
-    onClose();
+    setSaving(true);
+    try {
+      await onSave({
+        name:        form.name,
+        email:       form.email,
+        phone:       form.phone,
+        nationality: form.nationality,
+        disability:  form.disability,
+        exam:        form.exam,
+      });
+      onClose();
+    } catch {
+      // error shown by parent — keep modal open
+    } finally {
+      setSaving(false);
+    }
   }
 
   const isPrefilled = !!prefill && Object.keys(prefill).length > 0;
-  const isEditing = !!editing;
+  const isEditing   = !!editing;
 
   return (
     <Modal
@@ -121,9 +138,9 @@ export default function AddCandidateModal({ open, onClose, prefill, onSave, edit
       size="md"
       footer={
         <>
-          <Button variant="outline" tone="zinc" size="sm" onClick={onClose}>Cancel</Button>
-          <Button tone="green" size="sm" onClick={handleSave}>
-            {isEditing ? "Update Candidate" : isPrefilled ? "Confirm & Add" : "Add Candidate"}
+          <Button variant="outline" tone="zinc" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button tone="green" size="sm" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : isEditing ? "Update Candidate" : isPrefilled ? "Confirm & Add" : "Add Candidate"}
           </Button>
         </>
       }
@@ -169,9 +186,9 @@ export default function AddCandidateModal({ open, onClose, prefill, onSave, edit
           onChange={(v) => set("disability", v)}
         />
         <SelectField
-          label="Exam"
+          label="Programming language"
           value={form.exam}
-          options={EXAMS}
+          options={PROGRAMMING_LANGUAGES}
           onChange={(v) => set("exam", v)}
         />
       </div>

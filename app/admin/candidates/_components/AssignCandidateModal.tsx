@@ -5,24 +5,30 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import type { Candidate } from "../_data/types";
 
-const EXAMS = ["Frontend", "Backend", "Fundamentals"];
+const FALLBACK_EXAMS = ["Frontend", "Backend", "Fundamentals"];
 
 type Props = {
   open: boolean;
   onClose: () => void;
   candidates: Candidate[];
+  assessments?: { assessmentId: string; examTitle: string }[];
   onRequestAssign: (candidateIds: string[], exam: string) => void;
   editing?: Candidate | null;
 };
 
-export default function AssignCandidateModal({ open, onClose, candidates, onRequestAssign, editing }: Props) {
+export default function AssignCandidateModal({ open, onClose, candidates, assessments = [], onRequestAssign, editing }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [exam, setExam] = useState(() => editing?.exam ?? "");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() =>
     new Set(editing ? [editing.id] : [])
   );
-  const [examError, setExamError] = useState("");
+  const [examError, setExamError]           = useState("");
   const [candidateError, setCandidateError] = useState("");
+
+  const examOptions = assessments.length > 0
+    ? assessments.map((a) => a.examTitle)
+    : FALLBACK_EXAMS;
+
   function toggleCandidate(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -69,7 +75,7 @@ export default function AssignCandidateModal({ open, onClose, candidates, onRequ
         <div className="flex flex-col gap-3">
           <p className="text-xs text-zinc-500">Select the exam you want to assign:</p>
           <div className="flex flex-col gap-2">
-            {EXAMS.map((ex) => (
+            {examOptions.map((ex) => (
               <button
                 key={ex}
                 type="button"
@@ -104,9 +110,7 @@ export default function AssignCandidateModal({ open, onClose, candidates, onRequ
                 <div
                   key={c.id}
                   className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${
-                    selectedIds.has(c.id)
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-zinc-200 bg-white"
+                    selectedIds.has(c.id) ? "border-emerald-500 bg-emerald-50" : "border-zinc-200 bg-white"
                   }`}
                 >
                   <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${

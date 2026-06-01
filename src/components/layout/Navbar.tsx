@@ -17,7 +17,7 @@ export default function Navbar({
 }: NavbarProps) {
   return (
     <header className="w-full bg-white">
-      <div className="mx-auto flex min-h-[8vh] max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex min-h-[8vh] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Link href={brand.href ?? "/"} className="flex min-w-0 items-center gap-2">
           <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-emerald-600 text-white text-xs font-semibold">
             {"</>"}
