@@ -3,7 +3,6 @@ import MonacoEditor from "@monaco-editor/react";
 
 import Navbar from "@/components/layout/Navbar";
 import Button from "@/components/ui/Button";
-import SuccessToast from "@/components/feedback/SuccessToast";
 import CameraMonitor from "@/features/assessment-session/components/CameraMonitor";
 import SubmitConfirmModal from "@/components/modals/SubmitConfirmModal";
 
