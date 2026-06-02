@@ -25,6 +25,7 @@ type CreateExamModalProps = {
   open: boolean;
   onClose: () => void;
   onCreate?: (payload: CreateExamPayload) => void;
+  questions?: QuestionBankItem[];
   initialExam?: CreateExamPayload;
   initialSelectedQuestionIds?: string[];
   mode?: "create" | "edit";
@@ -34,6 +35,7 @@ export default function CreateExamModal({
   open,
   onClose,
   onCreate,
+  questions = QUESTION_BANK,
   initialExam,
   initialSelectedQuestionIds,
   mode = "create",
@@ -44,6 +46,7 @@ export default function CreateExamModal({
     <CreateExamModalContent
       onClose={onClose}
       onCreate={onCreate}
+      questions={questions}
       initialExam={initialExam}
       initialSelectedQuestionIds={initialSelectedQuestionIds}
       mode={mode}
@@ -54,10 +57,14 @@ export default function CreateExamModal({
 function CreateExamModalContent({
   onClose,
   onCreate,
+  questions,
   initialExam,
   initialSelectedQuestionIds = [],
   mode,
-}: Omit<CreateExamModalProps, "open"> & { mode: "create" | "edit" }) {
+}: Omit<CreateExamModalProps, "open"> & {
+  mode: "create" | "edit";
+  questions: QuestionBankItem[];
+}) {
   const [title, setTitle] = useState(initialExam?.examTitle ?? "");
   const [description, setDescription] = useState(initialExam?.description ?? "");
   const [timeLimit, setTimeLimit] = useState(initialExam?.timeValue ?? 60);
@@ -196,7 +203,7 @@ function CreateExamModalContent({
 
           {usesExamBuilderLayout && (
             <QuestionSelectionList
-              questions={QUESTION_BANK}
+              questions={questions}
               selectedQuestionIds={selectedQuestionIds}
               selectedQuestionCount={selectedQuestionCount}
               onToggleQuestion={toggleQuestion}

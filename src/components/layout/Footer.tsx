@@ -11,7 +11,7 @@ export default function Footer({
     <footer className="w-full">
       <div className="h-px w-full bg-zinc-200/70 shadow-[0_-1px_0_rgba(0,0,0,0.04)]" />
       <div className="flex min-h-[15vh] items-center justify-center text-center text-xs text-zinc-500">
-        &copy; {year} {productName}. All rights reserved.
+        &copy; {year} {productName}. All rights reserved
       </div>
     </footer>
   );
