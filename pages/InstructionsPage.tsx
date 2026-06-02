@@ -139,6 +139,23 @@ export default function InstructionsPage() {
       return INITIAL_SESSION;
     }
 
+    // If user arrived from an invite link (/exam/:assignmentId), prefer that session.
+    const candidateExamRaw = window.sessionStorage.getItem("candidateExam");
+    if (candidateExamRaw) {
+      try {
+        const parsed = JSON.parse(candidateExamRaw) as {
+          candidateName?: string;
+          language?: string;
+        };
+        return {
+          fullName: parsed.candidateName ?? "",
+          preferredLanguage: parsed.language ?? "",
+        };
+      } catch {
+        // fall back to candidateRegistration below
+      }
+    }
+
     const rawSession = window.sessionStorage.getItem("candidateRegistration");
 
     if (!rawSession) {

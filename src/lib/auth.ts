@@ -1,20 +1,31 @@
-const TOKEN_KEY = "authToken";
+// Prefer the new key used by the admin portal (localStorage-based auth).
+// Keep backward compatibility with the previous key.
+const PRIMARY_TOKEN_KEY = "accessToken";
+const LEGACY_TOKEN_KEY = "authToken";
 
 export function getAuthToken(): string {
   if (typeof window === "undefined") return "";
   const token =
-    localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY) ?? "";
+    localStorage.getItem(PRIMARY_TOKEN_KEY) ??
+    sessionStorage.getItem(PRIMARY_TOKEN_KEY) ??
+    localStorage.getItem(LEGACY_TOKEN_KEY) ??
+    sessionStorage.getItem(LEGACY_TOKEN_KEY) ??
+    "";
   if (!token || token === "undefined" || token === "null") return "";
   return token;
 }
 
 export function setAuthToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(PRIMARY_TOKEN_KEY, token);
+  // Also set legacy key so older code paths keep working if any remain.
+  localStorage.setItem(LEGACY_TOKEN_KEY, token);
 }
 
 export function clearAuthToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(PRIMARY_TOKEN_KEY);
+  sessionStorage.removeItem(PRIMARY_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  sessionStorage.removeItem(LEGACY_TOKEN_KEY);
 }
 
 export function authHeaders(): Record<string, string> {
