@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
+import { getAccessToken } from "@/lib/adminAuth";
 
 type Difficulty = "EASY" | "MEDIUM" | "HARD";
 type DifficultyFilter = "ALL" | Difficulty;
@@ -21,13 +22,14 @@ type Language =
   | "PHP";
 
 type Question = {
-  id: number;
+  id: string | number;
   title: string;
   description: string;
   marks: number;
   difficulty: Difficulty;
   language: Language;
   starterCode: string;
+  testCases?: Array<{ input: string; expectedOutput: string }>;
 };
 
 type QuestionFormValues = {
@@ -37,13 +39,15 @@ type QuestionFormValues = {
   difficulty: Difficulty | "";
   language: Language;
   starterCode: string;
+  testInput: string;
+  expectedOutput: string;
 };
 
 type QuestionCardProps = {
   question: Question;
   onViewDetails: (question: Question) => void;
   onEdit: (question: Question) => void;
-  onDelete: (questionId: number) => void;
+  onDelete: (questionId: string | number) => void;
 };
 
 type CreateQuestionModalProps = {
@@ -471,6 +475,8 @@ const emptyFormValues: QuestionFormValues = {
   difficulty: "",
   language: "JAVASCRIPT",
   starterCode: "",
+  testInput: "",
+  expectedOutput: "",
 };
 
 const difficultyOrder: Difficulty[] = ["EASY", "MEDIUM", "HARD"];
@@ -488,6 +494,29 @@ const languageOptions: Language[] = [
   "RUBY",
   "PHP",
 ];
+
+async function apiRequest<T>(
+  path: string,
+  init: Omit<RequestInit, "headers"> & { headers?: Record<string, string> } = {},
+): Promise<T> {
+  const token = getAccessToken();
+  if (!token) throw new Error("Unauthorized: missing access token");
+
+  const res = await fetch(`/api/backend${path}`, {
+    ...init,
+    headers: {
+      ...(init.headers ?? {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const body = (await res.json().catch(() => null)) as any;
+  if (!res.ok) {
+    const message = body?.message ?? body?.error ?? `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+  return (body?.data ?? body) as T;
+}
 
 function formatDifficulty(difficulty: Difficulty) {
   return difficulty.charAt(0) + difficulty.slice(1).toLowerCase();
@@ -1218,6 +1247,30 @@ function CreateQuestionModal({
             </Field>
           </div>
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Test case input">
+              <textarea
+                value={values.testInput}
+                onChange={(event) => updateField("testInput", event.target.value)}
+                className={`${inputClasses()} min-h-16 resize-none`}
+                placeholder="e.g. [2,7,11,15], 9"
+                required
+              />
+            </Field>
+
+            <Field label="Expected output">
+              <textarea
+                value={values.expectedOutput}
+                onChange={(event) =>
+                  updateField("expectedOutput", event.target.value)
+                }
+                className={`${inputClasses()} min-h-16 resize-none`}
+                placeholder="e.g. [0,1]"
+                required
+              />
+            </Field>
+          </div>
+
           <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-3 sm:flex-row sm:justify-end">
             <Button
               tone="zinc"
@@ -1383,6 +1436,7 @@ function QuestionDetailsModal({
 }
 
 function toFormValues(question: Question): QuestionFormValues {
+  const first = question.testCases?.[0];
   return {
     title: question.title,
     description: question.description,
@@ -1390,6 +1444,8 @@ function toFormValues(question: Question): QuestionFormValues {
     difficulty: question.difficulty,
     language: question.language,
     starterCode: question.starterCode,
+    testInput: first?.input ?? "",
+    expectedOutput: first?.expectedOutput ?? "",
   };
 }
 
@@ -1402,7 +1458,7 @@ function QuestionList({
   questions: Question[];
   onViewDetails: (question: Question) => void;
   onEdit: (question: Question) => void;
-  onDelete: (questionId: number) => void;
+  onDelete: (questionId: string | number) => void;
 }) {
   return (
     <section className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
@@ -1446,31 +1502,81 @@ function QuestionList({
 }
 
 export default function QuestionBankPage() {
-  const [questions, setQuestions] = useState<Question[]>(initialQuestions);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
-  const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
-  const [detailQuestionId, setDetailQuestionId] = useState<number | null>(null);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [detailQuestionId, setDetailQuestionId] = useState<string | null>(null);
   const [pendingDeleteQuestionId, setPendingDeleteQuestionId] = useState<
-    number | null
+    string | null
   >(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<DifficultyFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const questionsPerPage = 4;
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setLoadError("");
+      try {
+        const list = await apiRequest<any[]>("/questions", {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        });
+
+        const mapped: Question[] = (list ?? [])
+          .map((q) => ({
+            id: String(q?.id ?? q?.questionId ?? ""),
+            title: String(q?.title ?? ""),
+            description: String(q?.description ?? ""),
+            marks: Number(q?.marks ?? 0),
+            difficulty: (q?.difficulty ?? "EASY") as Difficulty,
+            language: (q?.language ?? "JAVASCRIPT") as Language,
+            starterCode: String(q?.starterCode ?? ""),
+            testCases: Array.isArray(q?.testCases) ? q.testCases : undefined,
+          }))
+          .filter((q) => q.id.trim() !== "");
+
+        if (!cancelled) {
+          setQuestions(mapped);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError((e as Error).message || "Failed to load questions");
+          setQuestions([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const activeQuestion = useMemo(
-    () => questions.find((question) => question.id === activeQuestionId) ?? null,
+    () =>
+      questions.find((question) => String(question.id) === activeQuestionId) ??
+      null,
     [activeQuestionId, questions]
   );
 
   const detailQuestion = useMemo(
-    () => questions.find((question) => question.id === detailQuestionId) ?? null,
+    () =>
+      questions.find((question) => String(question.id) === detailQuestionId) ??
+      null,
     [detailQuestionId, questions]
   );
 
   const pendingDeleteQuestion = useMemo(
     () =>
-      questions.find((question) => question.id === pendingDeleteQuestionId) ??
+      questions.find((question) => String(question.id) === pendingDeleteQuestionId) ??
       null,
     [pendingDeleteQuestionId, questions]
   );
@@ -1481,12 +1587,12 @@ export default function QuestionBankPage() {
   }
 
   function openEditModal(question: Question) {
-    setActiveQuestionId(question.id);
+    setActiveQuestionId(String(question.id));
     setModalMode("edit");
   }
 
   function openDetailsModal(question: Question) {
-    setDetailQuestionId(question.id);
+    setDetailQuestionId(String(question.id));
   }
 
   function closeModal() {
@@ -1498,21 +1604,30 @@ export default function QuestionBankPage() {
     setDetailQuestionId(null);
   }
 
-  function requestDelete(questionId: number) {
-    setPendingDeleteQuestionId(questionId);
+  function requestDelete(questionId: string | number) {
+    setPendingDeleteQuestionId(String(questionId));
   }
 
   function closeDeleteModal() {
     setPendingDeleteQuestionId(null);
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (pendingDeleteQuestionId === null) {
       return;
     }
 
+    try {
+      await apiRequest<void>(`/questions/${pendingDeleteQuestionId}`, {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+      });
+    } catch (e) {
+      setLoadError((e as Error).message || "Failed to delete question");
+    }
+
     setQuestions((current) =>
-      current.filter((question) => question.id !== pendingDeleteQuestionId)
+      current.filter((question) => String(question.id) !== pendingDeleteQuestionId)
     );
 
     if (activeQuestionId === pendingDeleteQuestionId) {
@@ -1526,7 +1641,7 @@ export default function QuestionBankPage() {
     closeDeleteModal();
   }
 
-  function handleSave(values: QuestionFormValues) {
+  async function handleSave(values: QuestionFormValues) {
     const nextQuestion: Omit<Question, "id"> = {
       title: values.title.trim(),
       description: values.description.trim(),
@@ -1534,24 +1649,62 @@ export default function QuestionBankPage() {
       difficulty: values.difficulty || "EASY",
       language: values.language,
       starterCode: values.starterCode.trim(),
+      testCases: [
+        {
+          input: values.testInput.trim(),
+          expectedOutput: values.expectedOutput.trim(),
+        },
+      ],
     };
 
     if (modalMode === "edit" && activeQuestionId !== null) {
+      try {
+        await apiRequest(`/questions/${activeQuestionId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(nextQuestion),
+        });
+      } catch (e) {
+        setLoadError((e as Error).message || "Failed to update question");
+      }
       setQuestions((current) =>
         current.map((question) =>
-          question.id === activeQuestionId
+          String(question.id) === activeQuestionId
             ? { ...question, ...nextQuestion }
             : question
         )
       );
     } else {
-      setQuestions((current) => [
-        ...current,
-        {
-          id: current.length === 0 ? 1 : Math.max(...current.map((q) => q.id)) + 1,
-          ...nextQuestion,
-        },
-      ]);
+      try {
+        const created = await apiRequest<any>("/questions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(nextQuestion),
+        });
+        const createdId = String(created?.id ?? created?.questionId ?? "");
+        setQuestions((current) => [
+          ...current,
+          {
+            id: createdId.trim() ? createdId : `tmp-${Date.now()}`,
+            ...nextQuestion,
+          },
+        ]);
+      } catch (e) {
+        setLoadError((e as Error).message || "Failed to create question");
+        setQuestions((current) => [
+          ...current,
+          {
+            id: `tmp-${Date.now()}`,
+            ...nextQuestion,
+          },
+        ]);
+      }
     }
 
     closeModal();
@@ -1603,6 +1756,18 @@ export default function QuestionBankPage() {
       <QuestionBankHeader />
 
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
+        {loading ? (
+          <div className="mb-4 rounded-3xl border border-zinc-200 bg-white px-6 py-4 text-sm text-zinc-600 shadow-sm">
+            Loading questions…
+          </div>
+        ) : null}
+
+        {loadError ? (
+          <div className="mb-4 rounded-3xl border border-orange-200 bg-orange-50 px-6 py-4 text-sm text-orange-800">
+            {loadError}
+          </div>
+        ) : null}
+
         <div>
           <StatusFilter
             activeFilter={activeFilter}
