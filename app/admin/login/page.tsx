@@ -6,16 +6,6 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import {
-  extractAccessToken,
-  parseApiErrorMessage,
-  setAuthToken,
-} from "@/lib/auth";
-
-const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL ??
-  "https://assessment-platfrom-be.onrender.com"
-).replace(/\/$/, "");
 import { setAuth } from "@/lib/adminAuth";
 
 export default function AdminLoginPage() {
@@ -29,9 +19,6 @@ export default function AdminLoginPage() {
   const handleLogin = async () => {
     setError("");
     setLoading(true);
-
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -39,36 +26,22 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const body: unknown = await res.json().catch(() => ({}));
-
-      if (res.ok) {
-        const token = extractAccessToken(body);
-        if (!token) {
-          setError("Login succeeded but no access token was returned.");
-          return;
-        }
-        setAuthToken(token);
-        router.push("/admin");
-        return;
-      }
-
-      setError(
-        parseApiErrorMessage(JSON.stringify(body)) ||
-          "Invalid email or password",
-      );
-    } catch {
-      setError("Could not reach the server. Check your connection and try again.");
       const data = (await res.json().catch(() => null)) as
-        | { success?: boolean; message?: string; accessToken?: string; role?: string | null }
+        | {
+            success?: boolean;
+            message?: string;
+            accessToken?: string;
+            role?: string | null;
+          }
         | null;
 
       if (!res.ok || !data?.success) {
-        setError(data?.message ?? "Login failed");
+        setError(data?.message ?? "Invalid email or password");
         return;
       }
 
       if (!data.accessToken) {
-        setError("Login succeeded but no token returned");
+        setError("Login succeeded but no access token was returned.");
         return;
       }
 
@@ -124,9 +97,6 @@ export default function AdminLoginPage() {
               tone="green"
               className="w-full h-10"
               disabled={loading || !email.trim() || !password}
-            >
-              {loading ? "Signing in…" : "Login"}
-              disabled={loading}
             >
               {loading ? "Logging in..." : "Login"}
             </Button>
