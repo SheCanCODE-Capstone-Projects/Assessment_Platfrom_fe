@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Button from "@/components/ui/Button";
 import CameraMonitor from "@/features/assessment-session/components/CameraMonitor";
 import SubmitConfirmModal from "@/components/modals/SubmitConfirmModal";
+import SuccessToast from "@/components/feedback/SuccessToast";
 
 const TOTAL_SECONDS = 60 * 60;
 const MAX_TAB_VIOLATIONS = 3;
@@ -49,7 +50,7 @@ const languageOptions: Language[] = [
   "PHP",
 ];
 
-const questions: Question[] = [
+const demoQuestions: Question[] = [
   {
     title: "Two Sum",
     difficulty: "Easy",
@@ -143,6 +144,75 @@ const questions: Question[] = [
   },
 ];
 
+type BackendQuestion = {
+  id?: string | number;
+  questionId?: string | number;
+  title?: string;
+  description?: string;
+  marks?: number;
+  difficulty?: "EASY" | "MEDIUM" | "HARD";
+  language?: string;
+  starterCode?: string;
+  testCases?: Array<{ input: string; expectedOutput: string }>;
+};
+
+function unwrap<T>(body: any): T {
+  return (body?.data ?? body) as T;
+}
+
+function toFrontendDifficulty(value: BackendQuestion["difficulty"]): Difficulty {
+  if (value === "MEDIUM") return "Medium";
+  return "Easy";
+}
+
+function toFrontendLanguage(value: string | undefined): Language {
+  const v = (value ?? "").toUpperCase();
+  if (v === "PYTHON") return "Python";
+  if (v === "JAVA") return "Java";
+  if (v === "CPLUSPLUS" || v === "CPP" || v === "C++") return "C++";
+  if (v === "TYPESCRIPT") return "TypeScript";
+  if (v === "CSHARP" || v === "C#") return "C#";
+  if (v === "PHP") return "PHP";
+  return "JavaScript";
+}
+
+function makeFunctionName(title: string) {
+  const cleaned = title
+    .replace(/[^a-zA-Z0-9 ]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .map((w, i) =>
+      i === 0
+        ? w.toLowerCase()
+        : (w[0]?.toUpperCase() ?? "") + w.slice(1).toLowerCase()
+    )
+    .join("");
+  return cleaned || "solution";
+}
+
+function buildSignatures(functionName: string): Record<Language, string> {
+  return {
+    JavaScript: `function ${functionName}(input)`,
+    TypeScript: `function ${functionName}(input: any): any`,
+    Python: `def ${functionName}(input)`,
+    Java: `public Object ${functionName}(Object input)`,
+    "C++": `auto ${functionName}(auto input)`,
+    "C#": `public object ${functionName}(object input)`,
+    PHP: `function ${functionName}($input)`,
+  };
+}
+
+function readCandidateExamSession(): { assessmentId?: string; language?: string } {
+  if (typeof window === "undefined") return {};
+  const raw = window.sessionStorage.getItem("candidateExam");
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as any;
+  } catch {
+    return {};
+  }
+}
+
 const starterTemplates: Record<Language, (question: Question) => string> = {
   JavaScript: (question) =>
     `${question.signatures.JavaScript} {\n  // Write your code here\n}`,
@@ -172,6 +242,10 @@ function isLanguage(value: string): value is Language {
 
 function getCandidateLanguage(): Language {
   if (typeof window === "undefined") return "JavaScript";
+  const exam = readCandidateExamSession();
+  if (exam.language && isLanguage(exam.language)) {
+    return exam.language as Language;
+  }
   const rawSession = window.sessionStorage.getItem("candidateRegistration");
   if (!rawSession) return "JavaScript";
 
@@ -368,6 +442,8 @@ function CodeEditor({
 
 export default function AssessmentPage() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [questions, setQuestions] = useState<Question[]>(demoQuestions);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [selectedLanguage] = useState<Language>(getCandidateLanguage);
   const [toast, setToast] = useState("");
   const [, setViolations] = useState(0);
@@ -401,6 +477,58 @@ export default function AssessmentPage() {
 
   const handleCameraBlocked = useCallback((message: string) => {
     setToast(message);
+  }, []);
+
+  useEffect(() => {
+    const exam = readCandidateExamSession();
+    if (!exam.assessmentId) return;
+
+    let cancelled = false;
+    async function loadQuestions() {
+      setLoadingQuestions(true);
+      try {
+        const res = await fetch(
+          `/api/backend/questions/assessment/${encodeURIComponent(exam.assessmentId!)}`,
+          { headers: { Accept: "application/json" } },
+        );
+        const body = await res.json().catch(() => null);
+        if (!res.ok) return;
+
+        const list = unwrap<BackendQuestion[]>(body) ?? [];
+        const mapped: Question[] = list.map((q) => {
+          const title = String(q.title ?? "Question");
+          const fn = makeFunctionName(title);
+          return {
+            title,
+            difficulty: toFrontendDifficulty(q.difficulty),
+            marks: Number(q.marks ?? 0),
+            description: [String(q.description ?? "")].filter(Boolean),
+            example: {
+              input: q.testCases?.[0]?.input ?? "",
+              output: q.testCases?.[0]?.expectedOutput ?? "",
+            },
+            testCases: (q.testCases ?? []).map((tc, idx) => ({
+              label: `Test Case ${idx + 1}`,
+              input: tc.input,
+              expected: tc.expectedOutput,
+            })),
+            functionName: fn,
+            signatures: buildSignatures(fn),
+          };
+        });
+
+        if (!cancelled && mapped.length) {
+          setQuestions(mapped);
+        }
+      } finally {
+        if (!cancelled) setLoadingQuestions(false);
+      }
+    }
+
+    loadQuestions();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const secondsLeft = useTimer({
