@@ -1,0 +1,33 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "6-implement-admin-dashboard-stats-recent-submissions",
+    "8-implement-exam-management-list-details-display",
+    "9-implement-candidate-registration-flow",
+    "Leoncie's-Branch",
+    "feature/ui-components",
+    "main",
+    "origin",
+    "shared-ui-components"
+  ],
+  "parent": {
+    "6-implement-admin-dashboard-stats-recent-submissions": "main",
+    "8-implement-exam-management-list-details-display": "main",
+    "9-implement-candidate-registration-flow": "main",
+    "Leoncie's-Branch": "main",
+    "feature/ui-components": "main",
+    "main": null,
+    "origin": "main",
+    "shared-ui-components": "main"
+  },
+  "order": [
+    "main",
+    "6-implement-admin-dashboard-stats-recent-submissions",
+    "8-implement-exam-management-list-details-display",
+    "9-implement-candidate-registration-flow",
+    "Leoncie's-Branch",
+    "feature/ui-components",
+    "origin",
+    "shared-ui-components"
+  ]
+}
